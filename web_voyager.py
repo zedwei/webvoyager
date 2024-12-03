@@ -299,7 +299,6 @@ graph_builder.add_conditional_edges("agent", select_tool)
 graph = graph_builder.compile()
 
 # %%
-from IPython import display
 from playwright.async_api import async_playwright
 from PIL import Image
 from io import BytesIO
@@ -326,10 +325,8 @@ async def call_agent(question: str, page, max_steps: int = 150):
         pred = event["agent"].get("prediction") or {}
         action = pred.get("action")
         action_input = pred.get("args")
-        display.clear_output(wait=False)
         steps.append(f"{len(steps) + 1}. {action}: {action_input}")
         print("\n".join(steps))
-        display.display(display.Image(base64.b64decode(event["agent"]["img"])))
         
         img_data = base64.b64decode(event["agent"]["img"])
         img_buffer = BytesIO(img_data)
@@ -343,21 +340,22 @@ async def call_agent(question: str, page, max_steps: int = 150):
     return final_answer
 
 async def main():
-    print("start")
+    print("Agent started")
     browser = await async_playwright().start()
     # # We will set headless=False so we can watch the agent navigate the web.
     browser = await browser.chromium.launch(channel="msedge", headless=False, args=None)
     # # browser = await playwright.sync_api..chromium.launch(headless=False, args=None)
     page = await browser.new_page()
-    # _ = await page.goto("https://www.google.com")
-    _ = await page.goto("https://www.google.com/travel/flights")
+    _ = await page.goto("https://www.google.com")
+    # _ = await page.goto("https://www.google.com/travel/flights")
 
     # res = await call_agent("Could you explain the WebVoyager paper (on arxiv)?", page)
     # res = await call_agent("help me check what's the latest nvidia stock price", page)
     # res = await call_agent("help me get the latest ipad mini deals on dealsea", page)
     # res = await call_agent("help me check availability of seastar restaurant for tonight for 2 person", page)
     # res = await call_agent("Find the cost of a 2-year protection for PS4 on Amazon.", page)
-    res = await call_agent("Find the non-stop one-way flight price from SEA to LAX on christmas eve from Delta airline", page)
+    # res = await call_agent("Find the non-stop one-way flight price from SEA to LAX on christmas eve from Delta airline", page)
+    res = await call_agent("Find the lowest cost of a XBox series X on Amazon/bestbuy/newegg.", page)
     print(f"Final response: {res}")
 
 
