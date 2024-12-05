@@ -35,6 +35,8 @@ class Agent():
             "Wait": wait,
             "GoBack": go_back,
             "Google": to_google,
+            "SignIn": human_signin,
+            "Clarify": ask,
         }
 
         for node_name, tool in tools.items():
@@ -83,7 +85,7 @@ class Agent():
             img.save(f'imgs/img_{img_count}.jpg')
             img_count += 1
 
-            if "ANSWER" in action:
+            if action == 'ANSWER':
                 final_answer = action_input[0]
                 break
         return final_answer

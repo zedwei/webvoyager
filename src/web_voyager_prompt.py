@@ -7,7 +7,7 @@ from langchain_core.prompts.image import ImagePromptTemplate
 
 
 def readPromptTemplate():
-    with open('./src/prompt.md', 'r') as file:
+    with open('./src/prompt_restaurant_booking.md', 'r') as file:
         file_content = file.read()
         return file_content
 

@@ -94,3 +94,19 @@ async def to_google(state: AgentState):
     page = state["page"]
     await page.goto("https://www.google.com/")
     return "Navigated to google.com."
+
+
+async def human_signin(state: AgentState):
+    user_input = input(
+        "Please manually sign-in to continue the flow. Press Enter once it's signed in.")
+    return "User manually signed in."
+
+
+async def ask(state: AgentState):
+    ask_args = state["prediction"]["args"]
+    if ask_args is None or len(ask_args) < 1:
+        return (f"Failed to ask question to user.")
+
+    print("Please type your answer to this question:")
+    user_input = input(ask_args[0])
+    return f"User provided answer as {user_input}"

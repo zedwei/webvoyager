@@ -17,6 +17,7 @@ def format_descriptions(state):
 
 
 def parse(text: str) -> dict:
+    print(text)
     action_prefix = "Action: "
     if not text.strip().split("\n")[-1].startswith(action_prefix):
         return {"action": "retry", "args": f"Could not parse LLM Output: {text}"}
