@@ -1,8 +1,10 @@
 import re
-from interfaces import AgentState
+from os import system
+from interfaces import AgentState, ActionResponse
 from langgraph.graph import END
 from langchain_core.messages import SystemMessage
-
+from colorama import Fore
+from constants import USER_QUERY
 
 def format_descriptions(state):
     labels = []
@@ -16,24 +18,28 @@ def format_descriptions(state):
     return {**state, "bbox_descriptions": bbox_descriptions}
 
 
-def parse(text: str) -> dict:
-    print(text)
-    action_prefix = "Action: "
-    if not text.strip().split("\n")[-1].startswith(action_prefix):
-        return {"action": "retry", "args": f"Could not parse LLM Output: {text}"}
-    action_block = text.strip().split("\n")[-1]
+def parse(response: ActionResponse) -> dict:
+    system('cls')
+    
+    print(Fore.WHITE + "User query:")
+    print(Fore.YELLOW + USER_QUERY)
+    print()
 
-    action_str = action_block[len(action_prefix):]
-    split_output = action_str.split(" ", 1)
-    if len(split_output) == 1:
-        action, action_input = split_output[0], None
-    else:
-        action, action_input = split_output
-    action = action.strip()
-    if action_input is not None:
-        action_input = [
-            inp.strip().strip("[]") for inp in action_input.strip().split(";")
-        ]
+    print(Fore.WHITE + "Agent thoughts:")
+    print(Fore.CYAN + response.thought)
+    print()
+    
+    if not response.action:
+        return {"action": "retry", "args": f"Could not parse LLM Output."}
+
+    action = response.action
+    action_input = []
+    if action in ['Click', 'Type']:
+        action_input.append(response.label)
+    
+    if action in ['Type', 'ANSWER', 'Clarify']:
+        action_input.append(response.content)
+
     return {"action": action, "args": action_input}
 
 
@@ -60,8 +66,10 @@ def update_scratchpad(state: AgentState):
         last_line = txt.rsplit("\n", 1)[-1]
         step = int(re.match(r"\d+", last_line).group()) + 1
     else:
-        txt = "Previous action observations:\n"
+        txt = "Previous action observations:"
         step = 1
     txt += f"\n{step}. {state['observation']}"
+
+    print(Fore.MAGENTA + txt)
 
     return {**state, "scratchpad": [SystemMessage(content=txt)]}

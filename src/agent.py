@@ -8,16 +8,22 @@ from utils import *
 from actions import *
 from mark_page import annotate
 from langgraph.graph import START, StateGraph
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnableLambda
-from interfaces import AgentState
+from interfaces import AgentState, ActionResponse
 
-class Agent():
 
+class Agent:
     def __init__(self):
+        # llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=16384)
         llm = ChatOpenAI(model="gpt-4o", max_tokens=16384)
+        llm = llm.with_structured_output(ActionResponse)
+
         self.agent = annotate | RunnablePassthrough.assign(
-            prediction=format_descriptions | prompt | llm | StrOutputParser() | parse
+            # prediction=format_descriptions | prompt | llm | PydanticOutputParser(pydantic_object=ActionResponse) | parse
+            prediction=format_descriptions
+            | prompt
+            | llm
+            | parse
         )
 
         graph_builder = StateGraph(AgentState)
@@ -44,8 +50,8 @@ class Agent():
                 node_name,
                 # The lambda ensures the function's string output is mapped to the "observation"
                 # key in the AgentState
-                RunnableLambda(tool) | (lambda observation: {
-                    "observation": observation}),
+                RunnableLambda(tool)
+                | (lambda observation: {"observation": observation}),
             )
             # Always return to the agent (by means of the update-scratchpad node)
             graph_builder.add_edge(node_name, "update_scratchpad")
@@ -77,15 +83,16 @@ class Agent():
             action = pred.get("action")
             action_input = pred.get("args")
             steps.append(f"{len(steps) + 1}. {action}: {action_input}")
-            print("\n".join(steps))
+
+            # print("\n".join(steps))
 
             img_data = base64.b64decode(event["agent"]["img"])
             img_buffer = BytesIO(img_data)
             img = Image.open(img_buffer)
-            img.save(f'imgs/img_{img_count}.jpg')
+            img.save(f"imgs/img_{img_count}.jpg")
             img_count += 1
 
-            if action == 'ANSWER':
+            if action == "ANSWER":
                 final_answer = action_input[0]
                 break
         return final_answer

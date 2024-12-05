@@ -1,9 +1,9 @@
 # %%
 import asyncio
 import platform
-import re
+import time
 from agent import AgentState
-
+from mark_page import mark_rect_once
 
 async def click(state: AgentState):
     # - Click [Numerical_Label]
@@ -18,26 +18,28 @@ async def click(state: AgentState):
     except Exception:
         return f"Error: no bbox for : {bbox_id}"
     x, y = bbox["x"], bbox["y"]
+
+    await mark_rect_once(page, bbox_id)
+    
     await page.mouse.click(x, y)
     # TODO: In the paper, they automatically parse any downloaded PDFs
     # We could add something similar here as well and generally
     # improve response format.
-    return f"Clicked {bbox_id}"
+    return f"Clicked {bbox_id}: {bbox["text"] or bbox["ariaLabel"]}"
 
 
 async def type_text(state: AgentState):
     page = state["page"]
     type_args = state["prediction"]["args"]
     if type_args is None or len(type_args) != 2:
-        return (
-            f"Failed to type in element from bounding box labeled as number {
+        return f"Failed to type in element from bounding box labeled as number {
                 type_args}"
-        )
     bbox_id = type_args[0]
     bbox_id = int(bbox_id)
     bbox = state["bboxes"][bbox_id]
     x, y = bbox["x"], bbox["y"]
     text_content = type_args[1]
+    await mark_rect_once(page, bbox_id)
     await page.mouse.click(x, y)
     # Check if MacOS
     select_all = "Meta+A" if platform.system() == "Darwin" else "Control+A"
@@ -98,15 +100,16 @@ async def to_google(state: AgentState):
 
 async def human_signin(state: AgentState):
     user_input = input(
-        "Please manually sign-in to continue the flow. Press Enter once it's signed in.")
+        "Please manually sign-in to continue the flow. Press Enter once it's signed in."
+    )
     return "User manually signed in."
 
 
 async def ask(state: AgentState):
     ask_args = state["prediction"]["args"]
     if ask_args is None or len(ask_args) < 1:
-        return (f"Failed to ask question to user.")
+        return f"Failed to ask question to user."
 
     print("Please type your answer to this question:")
     user_input = input(ask_args[0])
-    return f"User provided answer as {user_input}"
+    return f'Question: "{ask_args[0]}"  Answer from user: "{user_input}"'

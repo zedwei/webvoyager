@@ -1,0 +1,1 @@
+USER_QUERY = "book a table in liuyishou hotpot bellevue for 1 people at 7pm on 12/6"

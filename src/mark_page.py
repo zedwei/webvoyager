@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import time
 from langchain_core.runnables import chain as chain_decorator
 
 # Some javascript we will run on each step
@@ -20,7 +21,9 @@ async def mark_page(page):
             # May be loading...
             asyncio.sleep(3)
     screenshot = await page.screenshot()
+
     # Ensure the bboxes don't follow us around
+    # RANWEI: Keep bounding box for debugging purpose
     await page.evaluate("unmarkPage()")
     return {
         "img": base64.b64encode(screenshot).decode(),
@@ -28,6 +31,13 @@ async def mark_page(page):
     }
 
 
+async def mark_rect_once(page, index):
+    await page.evaluate(f"markRect({index})")
+    time.sleep(3)
+    await page.evaluate("unmarkPage()")
+
+
 async def annotate(state):
+    time.sleep(2)
     marked_page = await mark_page.with_retry().ainvoke(state["page"])
     return {**state, **marked_page}
