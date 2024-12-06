@@ -1,13 +1,15 @@
 # %%
 import asyncio
 import platform
-import time
 from agent import AgentState
 from mark_page import mark_rect_once
+from colorama import Fore
+
 
 async def click(state: AgentState):
     # - Click [Numerical_Label]
-    page = state["page"]
+    # page = state["page"]
+    page = state["browser"].pages[-1]
     click_args = state["prediction"]["args"]
     if click_args is None or len(click_args) != 1:
         return f"Failed to click bounding box labeled as number {click_args}"
@@ -20,7 +22,7 @@ async def click(state: AgentState):
     x, y = bbox["x"], bbox["y"]
 
     await mark_rect_once(page, bbox_id)
-    
+
     await page.mouse.click(x, y)
     # TODO: In the paper, they automatically parse any downloaded PDFs
     # We could add something similar here as well and generally
@@ -29,11 +31,12 @@ async def click(state: AgentState):
 
 
 async def type_text(state: AgentState):
-    page = state["page"]
+    # page = state["page"]
+    page = state["browser"].pages[-1]
     type_args = state["prediction"]["args"]
     if type_args is None or len(type_args) != 2:
         return f"Failed to type in element from bounding box labeled as number {
-                type_args}"
+            type_args}"
     bbox_id = type_args[0]
     bbox_id = int(bbox_id)
     bbox = state["bboxes"][bbox_id]
@@ -51,14 +54,18 @@ async def type_text(state: AgentState):
 
 
 async def scroll(state: AgentState):
-    page = state["page"]
+    # page = state["page"]
+    page = state["browser"].pages[-1]
     scroll_args = state["prediction"]["args"]
-    if scroll_args is None or len(scroll_args) != 2:
+    if scroll_args is None or len(scroll_args) != 1:
         return "Failed to scroll due to incorrect arguments."
 
-    target, direction = scroll_args
+    bbox_id = scroll_args[0]
+    bbox_id = int(bbox_id)
+    direction = "up" if state["prediction"]["action"].lower(
+    ) == "scrollup" else "down"
 
-    if target.upper() == "WINDOW":
+    if bbox_id == -1:
         # Not sure the best value for this:
         scroll_amount = 500
         scroll_direction = (
@@ -68,8 +75,7 @@ async def scroll(state: AgentState):
     else:
         # Scrolling within a specific element
         scroll_amount = 200
-        target_id = int(target)
-        bbox = state["bboxes"][target_id]
+        bbox = state["bboxes"][bbox_id]
         x, y = bbox["x"], bbox["y"]
         scroll_direction = (
             -scroll_amount if direction.lower() == "up" else scroll_amount
@@ -77,7 +83,7 @@ async def scroll(state: AgentState):
         await page.mouse.move(x, y)
         await page.mouse.wheel(0, scroll_direction)
 
-    return f"Scrolled {direction} in {'window' if target.upper() == 'WINDOW' else 'element'}"
+    return f"Scrolled {direction} in {'window' if bbox_id == -1 else 'element'}"
 
 
 async def wait(state: AgentState):
@@ -87,15 +93,33 @@ async def wait(state: AgentState):
 
 
 async def go_back(state: AgentState):
-    page = state["page"]
+    # page = state["page"]
+    page = state["browser"].pages[-1]
     await page.go_back()
     return f"Navigated back a page to {page.url}."
 
 
-async def to_google(state: AgentState):
-    page = state["page"]
-    await page.goto("https://www.google.com/")
-    return "Navigated to google.com."
+async def navigate(state: AgentState):
+    page = state["browser"].pages[-1]
+    navigate_args = state["prediction"]["args"]
+    if navigate_args is None or len(navigate_args) < 1:
+        return "Failed to scroll due to incorrect arguments."
+    url = navigate_args[0]
+    try:
+        await page.goto(url)
+    except:
+        return f"Failed to navigate to {url}."
+    
+    return f"Navigated to {url}"
+
+
+async def to_search(state: AgentState):
+    # page = state["page"]
+    page = state["browser"].pages[-1]
+    # await page.goto("https://www.google.com/")
+    # return "Navigated to google.com."
+    await page.goto("https://www.bing.com/")
+    return "Navigated to bing.com."
 
 
 async def human_signin(state: AgentState):
@@ -110,6 +134,7 @@ async def ask(state: AgentState):
     if ask_args is None or len(ask_args) < 1:
         return f"Failed to ask question to user."
 
-    print("Please type your answer to this question:")
-    user_input = input(ask_args[0])
+    print(Fore.WHITE + "Please type your answer to this question:")
+    print(Fore.YELLOW + f"Question: {ask_args[0]}" + Fore.GREEN)
+    user_input = input()
     return f'Question: "{ask_args[0]}"  Answer from user: "{user_input}"'

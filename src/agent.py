@@ -1,6 +1,6 @@
 import base64
 from io import BytesIO
-from web_voyager_prompt import prompt
+from prompt_template import prompt
 from PIL import Image
 from langchain_openai import ChatOpenAI
 from langchain_core.runnables import RunnablePassthrough
@@ -10,12 +10,13 @@ from mark_page import annotate
 from langgraph.graph import START, StateGraph
 from langchain_core.runnables import RunnableLambda
 from interfaces import AgentState, ActionResponse
+from constants import OPENAI_MODEL
 
 
 class Agent:
     def __init__(self):
         # llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=16384)
-        llm = ChatOpenAI(model="gpt-4o", max_tokens=16384)
+        llm = ChatOpenAI(model=OPENAI_MODEL, max_tokens=16384)
         llm = llm.with_structured_output(ActionResponse)
 
         self.agent = annotate | RunnablePassthrough.assign(
@@ -37,12 +38,14 @@ class Agent:
         tools = {
             "Click": click,
             "Type": type_text,
-            "Scroll": scroll,
+            "ScrollUp": scroll,
+            "ScrollDown": scroll,
             "Wait": wait,
             "GoBack": go_back,
-            "Google": to_google,
+            "Search": to_search,
             "SignIn": human_signin,
             "Clarify": ask,
+            "Navigate": navigate,
         }
 
         for node_name, tool in tools.items():
@@ -60,10 +63,13 @@ class Agent:
 
         self.graph = graph_builder.compile()
 
-    async def call_agent(self, question: str, page, max_steps: int = 150):
+        # print(self.graph.get_graph().draw_ascii())
+
+    async def call_agent(self, question: str, browser_context, page, max_steps: int = 150):
         event_stream = self.graph.astream(
             {
-                "page": page,
+                # "page": page,
+                "browser": browser_context,
                 "input": question,
                 "scratchpad": [],
             },
@@ -84,8 +90,6 @@ class Agent:
             action_input = pred.get("args")
             steps.append(f"{len(steps) + 1}. {action}: {action_input}")
 
-            # print("\n".join(steps))
-
             img_data = base64.b64decode(event["agent"]["img"])
             img_buffer = BytesIO(img_data)
             img = Image.open(img_buffer)
@@ -94,5 +98,7 @@ class Agent:
 
             if action == "ANSWER":
                 final_answer = action_input[0]
-                break
+                # break
+
+        await event_stream.aclose()
         return final_answer

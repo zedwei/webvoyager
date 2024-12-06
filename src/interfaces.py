@@ -1,4 +1,4 @@
-from playwright.async_api import Page
+from playwright.async_api import Page, BrowserContext
 from typing_extensions import TypedDict
 from typing import List, Optional
 from langchain_core.messages import BaseMessage
@@ -17,12 +17,14 @@ class BBox(TypedDict):
 class Prediction(TypedDict):
     action: str
     args: Optional[List[str]]
+    thought: str
 
 
 # This represents the state of the agent
 # as it proceeds through execution
 class AgentState(TypedDict):
-    page: Page  # The Playwright web page lets us interact with the web environment
+    browser: BrowserContext # The Playwright browser that includes all opened pages
+    # page: Page  # The Playwright web page lets us interact with the web environment
     input: str  # User request
     img: str  # b64 encoded screenshot
     # The bounding boxes from the browser annotation function
@@ -31,6 +33,7 @@ class AgentState(TypedDict):
     # A system message (or messages) containing the intermediate steps
     scratchpad: List[BaseMessage]
     observation: str  # The most recent response from a tool
+    step: int # number of steps taken
 
 
 # Pydantic
@@ -43,5 +46,5 @@ class ActionResponse(BaseModel):
         description="The Numerical Label corresponding to the Web Element that requires interaction."
     )
     content: Optional[str] = Field(
-        description="The content string to type or ask user or answer."
+        description="The string to type, or ask user, or answer, or URL string to navigate."
     )
