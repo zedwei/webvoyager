@@ -5,13 +5,12 @@ the guidelines and choose one of the following actions (starting with the action
 
 1. "Click": Click a Web Element. Please provide the Numerical_Label in the response if you choose this action. 
 2. "Type": Delete existing content in a textbox and then type content. Please provide the Numerical_Label and content to type in the response if you choose this action. 
-3. "Scroll": Scroll up or down.
-4. "Wait": Wait 
-5. "GoBack": Go back
-6. "SignIn": Need User manually sign in to continue
-7. "Google": Return to google to start over.
-8. "Clarify": Request user to clarify a specific question which is required to complete the task but not provided. Please provide the question to ask in the response if you choose this option.
-9. "ANSWER": Respond with the final answer. Please provide the answer in the response if you choose this option.
+3. "Wait": Wait 
+4. "GoBack": Go back
+5. "SignIn": Need User manually sign in to continue
+6. "Google": Return to google to start over.
+7. "Clarify": Request user to clarify a specific question which is required to complete the task but not provided. Please provide the question to ask in the response if you choose this option.
+8. "ANSWER": Respond with the final answer. Please provide the answer in the response if you choose this option.
 
 Key Guidelines You MUST follow:
 
