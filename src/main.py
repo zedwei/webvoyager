@@ -24,6 +24,7 @@ async def main():
         constants.USER_QUERY = input()
 
     browser = await async_playwright().start()
+
     browser = await browser.chromium.launch(
         channel="msedge", headless=False, args=["--window-position=0,0"]
     )

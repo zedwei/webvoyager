@@ -90,11 +90,11 @@ class Agent:
             action_input = pred.get("args")
             steps.append(f"{len(steps) + 1}. {action}: {action_input}")
 
-            img_data = base64.b64decode(event["agent"]["img"])
-            img_buffer = BytesIO(img_data)
-            img = Image.open(img_buffer)
-            img.save(f"imgs/img_{img_count}.jpg")
-            img_count += 1
+            # img_data = base64.b64decode(event["agent"]["img"])
+            # img_buffer = BytesIO(img_data)
+            # img = Image.open(img_buffer)
+            # img.save(f"imgs/img_{img_count}.jpg")
+            # img_count += 1
 
             if action == "ANSWER":
                 final_answer = action_input[0]

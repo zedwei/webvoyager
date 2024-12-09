@@ -1,6 +1,7 @@
 # %%
 import asyncio
 import platform
+import time
 from agent import AgentState
 from mark_page import mark_rect_once
 from colorama import Fore
@@ -49,6 +50,7 @@ async def type_text(state: AgentState):
     await page.keyboard.press(select_all)
     await page.keyboard.press("Backspace")
     await page.keyboard.type(text_content)
+    time.sleep(2)
     await page.keyboard.press("Enter")
     return f"Typed {text_content} and submitted"
 

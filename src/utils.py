@@ -14,8 +14,11 @@ def format_descriptions(state):
         el_type = bbox.get("type")
         labels.append(f'{i} (<{el_type}/>): "{text}"')
     bbox_descriptions = "\nValid Bounding Boxes:\n" + "\n".join(labels)
-    return {**state, "bbox_descriptions": bbox_descriptions}
 
+    page = state["browser"].pages[-1]
+    url = f"Current URL: {page.url}"
+
+    return {**state, "bbox_descriptions": bbox_descriptions, "current_url": url}
 
 def parse(response: ActionResponse) -> dict:
     system('cls')
@@ -31,6 +34,10 @@ def parse(response: ActionResponse) -> dict:
     print(Fore.WHITE + "Action: " + Fore.GREEN + f"{response.action}")
     print(Fore.WHITE + "UI Element: " + Fore.GREEN + f"{response.label}")
     print(Fore.WHITE + "Content: " + Fore.GREEN + f"{response.content}")
+    print()
+
+    print(Fore.WHITE + "Progress:")
+    print(Fore.CYAN + response.progress)
     print()
 
     if not response.action:
@@ -70,8 +77,9 @@ def update_scratchpad(state: AgentState):
         txt = old[0].content
         # last_line = txt.rsplit("\n", 1)[-1]
         # step = int(re.match(r"\d+", last_line).group()) + 1
+        txt = txt.replace("end\"\"\"", "")
     else:
-        txt = "Previous thoughts and actions taken:"
+        txt = "Previous thoughts and actions taken (in order):\nText: \"\"\"\n"
         # step = 1
     scratchpad_step = state.get("step") or 0
     scratchpad_step = scratchpad_step + 1
@@ -81,6 +89,7 @@ def update_scratchpad(state: AgentState):
     txt += f"\nThought: {state['prediction']['thought']}"
     txt += f"\nAction: {state['observation']}"
     txt += f"\n"
+    txt += "end\"\"\"\n"
 
     print(Fore.MAGENTA + txt)
 

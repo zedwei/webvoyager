@@ -18,6 +18,7 @@ class Prediction(TypedDict):
     action: str
     args: Optional[List[str]]
     thought: str
+    progress: str
 
 
 # This represents the state of the agent
@@ -40,6 +41,9 @@ class AgentState(TypedDict):
 class ActionResponse(BaseModel):
     thought: str = Field(
         description="Your brief thoughts (briefly summarize the info that will help ANSWER)."
+    )
+    progress: str = Field(
+        description="Your current step in the ACTION PLAN and a brief description"
     )
     action: str = Field(description="One Action type you choose.")
     label: Optional[int] = Field(

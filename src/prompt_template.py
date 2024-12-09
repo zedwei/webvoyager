@@ -33,6 +33,7 @@ prompt = ChatPromptTemplate(
                     ],
                 ),
                 PromptTemplate.from_template("{bbox_descriptions}"),
+                PromptTemplate.from_template("{current_url}"),
                 PromptTemplate.from_template("{input}"),
             ],
         ),
