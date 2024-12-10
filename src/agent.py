@@ -9,7 +9,7 @@ from mark_page import annotate
 from langgraph.graph import START, StateGraph
 from langchain_core.runnables import RunnableLambda
 from interfaces import AgentState, ActionResponse
-from constants import OPENAI_MODEL, PROMPT_FILENAME
+import constants
 from langchain.prompts.chat import ChatPromptTemplate
 from langchain.prompts.chat import SystemMessagePromptTemplate
 from langchain.prompts.chat import MessagesPlaceholder
@@ -19,7 +19,7 @@ from langchain_core.prompts.image import ImagePromptTemplate
 
 
 def readPromptTemplate():
-    with open(f"./src/prompts/{PROMPT_FILENAME}", "r") as file:
+    with open(f"./src/prompts/{constants.PROMPT_FILENAME}", "r") as file:
         file_content = file.read()
         return file_content
 
@@ -27,7 +27,7 @@ def readPromptTemplate():
 class Agent:
     def __init__(self):
         # llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=16384)
-        llm = ChatOpenAI(model=OPENAI_MODEL, max_tokens=16384)
+        llm = ChatOpenAI(model=constants.OPENAI_MODEL, max_tokens=16384)
         llm = llm.with_structured_output(ActionResponse)
 
         prompt = ChatPromptTemplate(
