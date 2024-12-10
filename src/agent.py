@@ -1,6 +1,5 @@
 import base64
 from io import BytesIO
-from prompt_template import prompt
 from PIL import Image
 from langchain_openai import ChatOpenAI
 from langchain_core.runnables import RunnablePassthrough
@@ -10,7 +9,19 @@ from mark_page import annotate
 from langgraph.graph import START, StateGraph
 from langchain_core.runnables import RunnableLambda
 from interfaces import AgentState, ActionResponse
-from constants import OPENAI_MODEL
+from constants import OPENAI_MODEL, PROMPT_FILENAME
+from langchain.prompts.chat import ChatPromptTemplate
+from langchain.prompts.chat import SystemMessagePromptTemplate
+from langchain.prompts.chat import MessagesPlaceholder
+from langchain.prompts.chat import HumanMessagePromptTemplate
+from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts.image import ImagePromptTemplate
+
+
+def readPromptTemplate():
+    with open(f"./src/prompts/{PROMPT_FILENAME}", "r") as file:
+        file_content = file.read()
+        return file_content
 
 
 class Agent:
@@ -18,6 +29,39 @@ class Agent:
         # llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=16384)
         llm = ChatOpenAI(model=OPENAI_MODEL, max_tokens=16384)
         llm = llm.with_structured_output(ActionResponse)
+
+        prompt = ChatPromptTemplate(
+            messages=[
+                SystemMessagePromptTemplate(
+                    prompt=[
+                        PromptTemplate.from_template(readPromptTemplate()),
+                    ],
+                ),
+                MessagesPlaceholder(
+                    optional=True,
+                    variable_name="scratchpad",
+                ),
+                HumanMessagePromptTemplate(
+                    prompt=[
+                        ImagePromptTemplate(
+                            template={"url": "data:image/png;base64,{img}"},
+                            input_variables=[
+                                "img",
+                            ],
+                        ),
+                        PromptTemplate.from_template("{bbox_descriptions}"),
+                        PromptTemplate.from_template("{current_url}"),
+                        PromptTemplate.from_template("{input}"),
+                    ],
+                ),
+            ],
+            input_variables=[
+                "bbox_descriptions",
+                "img",
+                "input",
+            ],
+            partial_variables={"scratchpad": []},
+        )
 
         self.agent = annotate | RunnablePassthrough.assign(
             # prediction=format_descriptions | prompt | llm | PydanticOutputParser(pydantic_object=ActionResponse) | parse
@@ -63,9 +107,9 @@ class Agent:
 
         self.graph = graph_builder.compile()
 
-        # print(self.graph.get_graph().draw_ascii())
-
-    async def call_agent(self, question: str, browser_context, page, max_steps: int = 150):
+    async def call_agent(
+        self, question: str, browser_context, page, max_steps: int = 150
+    ):
         event_stream = self.graph.astream(
             {
                 # "page": page,

@@ -2,7 +2,7 @@
 # PROMPT_FILENAME = "prompt_restaurant_booking.md"
 
 ## Restaurant specific prompt
-PROMPT_FILENAME = "prompt_generic_gpt_optimized.md"
+PROMPT_FILENAME = ""
 
 OPENAI_MODEL = "gpt-4o"  # "gpt-4o-mini"
 
