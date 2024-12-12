@@ -35,6 +35,7 @@ def parse(response: ActionResponse) -> dict:
     print(Fore.WHITE + "UI Element: " + Fore.GREEN + f"{response.label}")
     print(Fore.WHITE + "Content (optional): " + Fore.GREEN + f"{response.content}")
     print(Fore.WHITE + "Select label (optional): " + Fore.GREEN + f"{response.selectLabel}")
+    print(Fore.WHITE + "Status: " + Fore.GREEN + f"{response.status}")
     print()
 
     if not response.action:

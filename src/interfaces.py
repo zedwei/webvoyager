@@ -1,9 +1,9 @@
-from playwright.async_api import Page, BrowserContext
+from playwright.async_api import BrowserContext
 from typing_extensions import TypedDict
 from typing import List, Optional
 from langchain_core.messages import BaseMessage
 from pydantic import BaseModel, Field
-from typing import Optional
+from datetime import date, time
 
 
 class BBox(TypedDict):
@@ -36,7 +36,19 @@ class AgentState(TypedDict):
     step: int  # number of steps taken
 
 
+class RestaurantBooking(TypedDict):
+    rname: Optional[str] = Field(
+        "Name of the restaurant shown on the current page")
+    rdate: Optional[date] = Field(
+        "date of the booking shown on the current page")
+    rtime: Optional[time] = Field(
+        "Time of the booking shown on the current page")
+    rCount: Optional[int] = Field(
+        "Number of people of the booking shown on the current page ")
+
 # Pydantic
+
+
 class ActionResponse(BaseModel):
     thought: str = Field(
         description="A breif description of the action you're trying to perform"
@@ -51,3 +63,4 @@ class ActionResponse(BaseModel):
     selectLabel: Optional[str] = Field(
         description="The label string of the target select option"
     )
+    status: RestaurantBooking
