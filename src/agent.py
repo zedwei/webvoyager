@@ -90,6 +90,7 @@ class Agent:
             "SignIn": human_signin,
             "Clarify": ask,
             "Navigate": navigate,
+            "Select": select,
         }
 
         for node_name, tool in tools.items():

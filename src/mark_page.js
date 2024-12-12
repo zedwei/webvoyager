@@ -41,6 +41,15 @@ function getRandomColor() {
 }
 
 
+function getTextualContent(element) {
+  if (element.tagName.toLowerCase() == 'select') {
+    return Array.from(element.options).map(item => item.text);
+  } else {
+    return element.textContent.trim().replace(/\s{2,}/g, " ");
+  }
+}
+
+
 function markPage() {
   unmarkPage();
 
@@ -57,7 +66,7 @@ function markPage() {
         document.documentElement.clientHeight || 0,
         window.innerHeight || 0
       );
-      var textualContent = element.textContent.trim().replace(/\s{2,}/g, " ");
+      var textualContent = getTextualContent(element);
       var elementType = element.tagName.toLowerCase();
       var ariaLabel = element.getAttribute("aria-label") || "";
 
@@ -193,4 +202,14 @@ function markRect(index) {
     document.body.appendChild(newElement);
     labels.push(newElement);
   });
+}
+
+function getSelectOffset(index, targetText) {
+  const element = items[index].element
+  const currentValue = element.value
+
+  const current_index = element.selectedIndex
+  const target_index = Array.from(element.options).map(item => item.text).indexOf(targetText)
+
+  return target_index - current_index
 }

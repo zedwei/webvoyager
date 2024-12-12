@@ -18,13 +18,12 @@ class Prediction(TypedDict):
     action: str
     args: Optional[List[str]]
     thought: str
-    progress: str
 
 
 # This represents the state of the agent
 # as it proceeds through execution
 class AgentState(TypedDict):
-    browser: BrowserContext # The Playwright browser that includes all opened pages
+    browser: BrowserContext  # The Playwright browser that includes all opened pages
     # page: Page  # The Playwright web page lets us interact with the web environment
     input: str  # User request
     img: str  # b64 encoded screenshot
@@ -34,16 +33,13 @@ class AgentState(TypedDict):
     # A system message (or messages) containing the intermediate steps
     scratchpad: List[BaseMessage]
     observation: str  # The most recent response from a tool
-    step: int # number of steps taken
+    step: int  # number of steps taken
 
 
 # Pydantic
 class ActionResponse(BaseModel):
     thought: str = Field(
-        description="Your brief thoughts (briefly summarize the info that will help ANSWER)."
-    )
-    progress: str = Field(
-        description="Your current step in the ACTION PLAN and a brief description"
+        description="A breif description of the action you're trying to perform"
     )
     action: str = Field(description="One Action type you choose.")
     label: Optional[int] = Field(
@@ -51,4 +47,7 @@ class ActionResponse(BaseModel):
     )
     content: Optional[str] = Field(
         description="The string to type, or ask user, or answer, or URL string to navigate."
+    )
+    selectLabel: Optional[str] = Field(
+        description="The label string of the target select option"
     )

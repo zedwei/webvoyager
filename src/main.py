@@ -1,6 +1,5 @@
 import asyncio
 import os
-
 from playwright.async_api import async_playwright
 from getpass import getpass
 from agent import Agent
@@ -51,7 +50,7 @@ def init():
 
 async def main():
     os.system("cls")
-    print(Fore.YELLOW + "Initiating browser and starting  agent...")
+    print(Fore.YELLOW + "Initiating browser and starting agent...")
 
     agent = Agent()
     browser = await async_playwright().start()

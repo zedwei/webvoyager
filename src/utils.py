@@ -33,11 +33,8 @@ def parse(response: ActionResponse) -> dict:
     
     print(Fore.WHITE + "Action: " + Fore.GREEN + f"{response.action}")
     print(Fore.WHITE + "UI Element: " + Fore.GREEN + f"{response.label}")
-    print(Fore.WHITE + "Content: " + Fore.GREEN + f"{response.content}")
-    print()
-
-    print(Fore.WHITE + "Progress:")
-    print(Fore.CYAN + response.progress)
+    print(Fore.WHITE + "Content (optional): " + Fore.GREEN + f"{response.content}")
+    print(Fore.WHITE + "Select label (optional): " + Fore.GREEN + f"{response.selectLabel}")
     print()
 
     if not response.action:
@@ -45,11 +42,14 @@ def parse(response: ActionResponse) -> dict:
 
     action = response.action
     action_input = []
-    if action in ['Click', 'Type', 'ScrollUp', 'ScrollDown']:
+    if action in ['Click', 'Type', 'ScrollUp', 'ScrollDown', 'Select']:
         action_input.append(response.label)
     
     if action in ['Type', 'ANSWER', 'Clarify', 'Navigate']:
         action_input.append(response.content)
+
+    if action in ['Select']:
+        action_input.append(response.selectLabel)
 
     return {"action": action, "args": action_input, "thought": response.thought}
 

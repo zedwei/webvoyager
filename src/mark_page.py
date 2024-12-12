@@ -27,7 +27,7 @@ async def mark_page(page):
     # RANWEI: Keep bounding box for debugging purpose
     await page.evaluate("unmarkPage()")
     
-    print(Fore.RED + f"Marked page with {len(bboxes)} bboxes.")
+    print(Fore.YELLOW + f"Marked page with {len(bboxes)} bboxes.")
     
     return {
         "img": base64.b64encode(screenshot).decode(),
@@ -46,7 +46,7 @@ async def mark_rect_once(page, index):
 
 async def annotate(state):
     # time.sleep(2)
-    await asyncio.sleep(5)
+    await asyncio.sleep(2)
     page = state["browser"].pages[-1]
     marked_page = await mark_page.with_retry().ainvoke(page)
     return {**state, **marked_page}
