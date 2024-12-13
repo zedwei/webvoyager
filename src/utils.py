@@ -38,7 +38,8 @@ def parse(response: ActionResponse) -> dict:
     print(Fore.WHITE + "UI Element: " + Fore.GREEN + f"{response.label}")
     print(Fore.WHITE + "Content (optional): " + Fore.GREEN + f"{response.content}")
     print(Fore.WHITE + "Select label (optional): " + Fore.GREEN + f"{response.selectLabel}")
-    print_status("Status", "Current", "Requested")
+
+    print()
     print_status("Name", response.status["status_name"], response.status["request_name"])
     print_status("Date", response.status["status_date"], response.status["request_date"])
     print_status("Time", response.status["status_time"], response.status["request_time"])

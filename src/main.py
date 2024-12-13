@@ -20,18 +20,7 @@ def init():
     # Get OpenAI API Key
     _getpass("OPENAI_API_KEY")
 
-    # Choose the model to use
-    print(Fore.WHITE + "Choose which model to use:")
-    print(Fore.YELLOW + "1) gpt-4o (Default)")
-    print(Fore.YELLOW + "2) gpt-4o-mini")
-    print(Fore.WHITE + "Select: ", end=" ")
-    model_selection = input()
-    if model_selection == 1:
-        constants.OPENAI_MODEL = "gpt-4o"
-    elif model_selection == 2:
-        constants.OPENAI_MODEL = "gpt-4o-mini"
-    print()
-
+    # Choose the prompt file to use
     prompt_list = os.listdir("./src/prompts")
     print(Fore.WHITE + "Choose the prompt template:")
     for prompt_idx in range(len(prompt_list)):
@@ -55,13 +44,13 @@ async def main():
     agent = Agent()
     browser = await async_playwright().start()
 
-    ## By default the agent will operate on a private window of the default profile
+    # By default the agent will operate on a private window of the default profile
     browser = await browser.chromium.launch(
         channel="msedge", headless=False, args=["--window-position=0,0"]
     )
     context = await browser.new_context(viewport={"width": 1280, "height": 1080})
 
-    ## This is used to point to a specific signedin user folder
+    # This is used to point to a specific signedin user folder
     # context = await browser.chromium.launch_persistent_context(
     #     channel="msedge",
     #     headless=False,

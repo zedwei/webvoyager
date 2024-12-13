@@ -38,13 +38,13 @@ class AgentState(TypedDict):
 
 class RestaurantBooking(TypedDict):
     request_name: Optional[str] = Field(
-        "Name of the restaurant in user's request")
+        "Name of the restaurant in user's request instead of from current web page")
     request_date: Optional[date] = Field(
-        "date of the booking in user's request")
+        "date of the booking in user's request instead of from current web page")
     request_time: Optional[time] = Field(
-        "Time of the booking in user's request")
+        "Time of the booking in user's request instead of from current web page")
     request_count: Optional[int] = Field(
-        "Number of people of the booking in user's request")
+        "Number of people of the booking in user's request instead of from current web page")
 
     status_name: Optional[str] = Field(
         "Name of the restaurant in user's request")
@@ -76,5 +76,3 @@ class ActionResponse(BaseModel):
         description="The label string of the target select option"
     )
     status: RestaurantBooking
-
-
