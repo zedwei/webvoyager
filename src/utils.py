@@ -20,6 +20,9 @@ def format_descriptions(state):
 
     return {**state, "bbox_descriptions": bbox_descriptions, "current_url": url}
 
+def print_status(name, current, requested):
+    print(f"{Fore.WHITE}{name}: {Fore.YELLOW}{current}{Fore.WHITE}|{Fore.GREEN}{requested}")
+
 def parse(response: ActionResponse) -> dict:
     system('cls')
     
@@ -35,7 +38,12 @@ def parse(response: ActionResponse) -> dict:
     print(Fore.WHITE + "UI Element: " + Fore.GREEN + f"{response.label}")
     print(Fore.WHITE + "Content (optional): " + Fore.GREEN + f"{response.content}")
     print(Fore.WHITE + "Select label (optional): " + Fore.GREEN + f"{response.selectLabel}")
-    print(Fore.WHITE + "Status: " + Fore.GREEN + f"{response.status}")
+    print_status("Status", "Current", "Requested")
+    print_status("Name", response.status["status_name"], response.status["request_name"])
+    print_status("Date", response.status["status_date"], response.status["request_date"])
+    print_status("Time", response.status["status_time"], response.status["request_time"])
+    print_status("# of ppl", response.status["status_count"], response.status["request_count"])
+    print(f"{Fore.WHITE}Matched per LLM? {Fore.GREEN if response.status["match"] else Fore.YELLOW}{response.status["match"]}")
     print()
 
     if not response.action:

@@ -37,15 +37,27 @@ class AgentState(TypedDict):
 
 
 class RestaurantBooking(TypedDict):
-    rname: Optional[str] = Field(
-        "Name of the restaurant shown on the current page")
-    rdate: Optional[date] = Field(
-        "date of the booking shown on the current page")
-    rtime: Optional[time] = Field(
-        "Time of the booking shown on the current page")
-    rCount: Optional[int] = Field(
-        "Number of people of the booking shown on the current page ")
+    request_name: Optional[str] = Field(
+        "Name of the restaurant in user's request")
+    request_date: Optional[date] = Field(
+        "date of the booking in user's request")
+    request_time: Optional[time] = Field(
+        "Time of the booking in user's request")
+    request_count: Optional[int] = Field(
+        "Number of people of the booking in user's request")
 
+    status_name: Optional[str] = Field(
+        "Name of the restaurant in user's request")
+    status_date: Optional[date] = Field(
+        "date of the booking in user's request")
+    status_time: Optional[time] = Field(
+        "Time of the booking in user's request")
+    status_count: Optional[int] = Field(
+        "Number of people of the booking in user's request")
+
+    match: bool = Field(
+        "Whether the restaurant name, date, time, and number of people on the current webpage match user's request"
+    )
 # Pydantic
 
 
@@ -64,3 +76,5 @@ class ActionResponse(BaseModel):
         description="The label string of the target select option"
     )
     status: RestaurantBooking
+
+
