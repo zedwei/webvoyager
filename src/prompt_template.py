@@ -20,10 +20,6 @@ prompt = ChatPromptTemplate(
                 PromptTemplate.from_template(readPromptTemplate()),
             ],
         ),
-        MessagesPlaceholder(
-            optional=True,
-            variable_name="scratchpad",
-        ),
         HumanMessagePromptTemplate(
             prompt=[
                 ImagePromptTemplate(
@@ -34,8 +30,13 @@ prompt = ChatPromptTemplate(
                 ),
                 PromptTemplate.from_template("{bbox_descriptions}"),
                 PromptTemplate.from_template("{current_url}"),
+                PromptTemplate.from_template("[User Input]"),
                 PromptTemplate.from_template("{input}"),
             ],
+        ),
+        MessagesPlaceholder(
+            optional=True,
+            variable_name="scratchpad",
         ),
     ],
     input_variables=[

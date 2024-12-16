@@ -138,6 +138,9 @@ async def ask(state: AgentState):
     print(Fore.WHITE + "Please type your answer to this question:")
     print(Fore.YELLOW + f"Question: {ask_args[0]}" + Fore.GREEN)
     user_input = input()
+    
+    # Append user input to ask_args so it can be used in scratchpad update
+    ask_args.append(user_input) 
     return f'Question: "{ask_args[0]}"  Answer from user: "{user_input}"'
 
 

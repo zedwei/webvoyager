@@ -14,7 +14,7 @@ from langchain.prompts.chat import ChatPromptTemplate
 from langchain.prompts.chat import SystemMessagePromptTemplate
 from langchain.prompts.chat import MessagesPlaceholder
 from langchain.prompts.chat import HumanMessagePromptTemplate
-from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate, StringPromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 
 
@@ -40,6 +40,12 @@ class Agent:
                 MessagesPlaceholder(
                     optional=True,
                     variable_name="scratchpad",
+                ),
+                SystemMessagePromptTemplate(
+                    prompt=[
+                        PromptTemplate.from_template(
+                            "Then the user will provide: Observation: {{A labeled screenshot Given by User}}")
+                    ]
                 ),
                 HumanMessagePromptTemplate(
                     prompt=[
