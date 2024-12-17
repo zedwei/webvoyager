@@ -36,29 +36,37 @@ class AgentState(TypedDict):
     step: int  # number of steps taken
 
 
-class RestaurantBooking(TypedDict):
+# Pydantic
+class RestaurantBooking(BaseModel):
     request_name: str = Field(
-        description="Derived Restaurant Name from [User Request] section")
+        description="Derived Restaurant Name from [User Request] section"
+    )
     request_date: Optional[date] = Field(
-        description="Derived Booking Date from [User Request] section")
+        description="Derived Booking Date from [User Request] section"
+    )
     request_time: Optional[time] = Field(
-        description="Derived Booking Time from [User Request] section")
+        description="Derived Booking Time from [User Request] section"
+    )
     request_count: int = Field(
-        description="Derived Party Size from [User Request] section")
+        description="Derived Party Size from [User Request] section"
+    )
 
     status_name: Optional[str] = Field(
-        description="Derived Restaurant Name from [Current webpage] section")
+        description="Derived Restaurant Name from [Current webpage] section"
+    )
     status_date: Optional[date] = Field(
-        description="Derived Booking Date from [Current webpage] section")
+        description="Derived Booking Date from [Current webpage] section"
+    )
     status_time: Optional[time] = Field(
-        description="Derived Booking Time from [Current webpage] section")
+        description="Derived Booking Time from [Current webpage] section"
+    )
     status_count: Optional[int] = Field(
-        description="Derived Party Size from [Current webpage] section")
+        description="Derived Party Size from [Current webpage] section"
+    )
 
     match: bool = Field(
         description="Whether the restaurant name, date, time, and party size match between the [Current webpage] section and the [User Request] section"
     )
-# Pydantic
 
 
 class ActionResponse(BaseModel):
@@ -76,3 +84,49 @@ class ActionResponse(BaseModel):
         description="The label string of the target select option"
     )
     status: RestaurantBooking
+
+
+class ActionResponseFlattened(BaseModel):
+    thought: str = Field(
+        description="A brief description of the action you're trying to perform"
+    )
+    action: str = Field(description="One Action type you choose.")
+    label: Optional[int] = Field(
+        description="The Numerical Label corresponding to the Web Element that requires interaction."
+    )
+    content: Optional[str] = Field(
+        description="The string to type, or ask user, or answer, or URL string to navigate."
+    )
+    selectLabel: Optional[str] = Field(
+        description="The label string of the target select option"
+    )
+
+    request_name: str = Field(
+        description="Derived Restaurant Name from [User Request] section"
+    )
+    request_date: Optional[date] = Field(
+        description="Derived Booking Date from [User Request] section"
+    )
+    request_time: Optional[time] = Field(
+        description="Derived Booking Time from [User Request] section"
+    )
+    request_count: int = Field(
+        description="Derived Party Size from [User Request] section"
+    )
+
+    status_name: Optional[str] = Field(
+        description="Derived Restaurant Name from [Current webpage] section. Don't derive from URL string."
+    )
+    status_date: Optional[date] = Field(
+        description="Derived Booking Date from [Current webpage] section. Don't derive from URL string."
+    )
+    status_time: Optional[time] = Field(
+        description="Derived Booking Time from [Current webpage] section. Don't derive from URL string."
+    )
+    status_count: Optional[int] = Field(
+        description="Derived Party Size from [Current webpage] section. Don't derive from URL string."
+    )
+
+    match: bool = Field(
+        description="Whether the restaurant name, date, time, and party size match between the [Current webpage] section and the [User Request] section"
+    )

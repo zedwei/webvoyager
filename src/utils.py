@@ -1,7 +1,7 @@
 from os import system
-from interfaces import AgentState, ActionResponse
+from interfaces import AgentState, ActionResponse, ActionResponseFlattened
 from langgraph.graph import END
-from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
+from langchain_core.messages import SystemMessage, HumanMessage
 from colorama import Fore
 import constants
 
@@ -9,32 +9,52 @@ import constants
 def format_descriptions(state):
     labels = []
     for i, bbox in enumerate(state["bboxes"]):
-        text = bbox.get("ariaLabel") or ""
-        if not text.strip():
-            text = bbox["text"]
+        ariaLabel = bbox.get("ariaLabel") or ""
+        ariaLabel = ariaLabel.strip()
+        text = bbox["text"] or ""
         el_type = bbox.get("type")
-        labels.append(f'{i} (<{el_type}/>): "{text}"')
-    bbox_descriptions = "\nValid Bounding Boxes:\n" + "\n".join(labels)
+        if ariaLabel != "" or text != "":
+            labels.append(f"{i} | <{el_type}> | {ariaLabel} | {text}")
+    bbox_descriptions = (
+        "\nValid Bounding Boxes:"
+        + '\n Format: "Numerical_Label | HTML element tag | Aria Label | Text "'
+        + "\n Data: \n"
+        + "\n".join(labels)
+    )
 
     page = state["browser"].pages[-1]
-    url = f"Current URL: {page.url}"
+    url = f"\nCurrent URL: {page.url}"
 
-    return {**state, "bbox_descriptions": bbox_descriptions, "current_url": url}
+    # Response from last action
+    action_response = []
+    if 'observation' in  state:
+        action_response = [
+            HumanMessage(content=f"[Response from last Action]\n{state["observation"]}")
+        ]
+
+    # Initialize scratch pad
+    scratchpad = state["scratchpad"]
+    if not scratchpad:
+        scratchpad = [HumanMessage(content=f"[User Request]\n{constants.USER_QUERY}\n")]
+
+    return {
+        **state,
+        "bbox_descriptions": bbox_descriptions,
+        "current_url": url,
+        "scratchpad": scratchpad,
+        "action_response": action_response,
+    }
 
 
 def print_status(name, current, requested):
-    # source = "not available"
-    # if by_user:
-    #     source = "user input"
-    # elif requested != None:
-    #     source = "model inferred"
-
-    print(f"{Fore.WHITE}{name}: {Fore.YELLOW}{current}{
-          Fore.WHITE}|{Fore.GREEN}{requested}")
+    print(
+        f"{Fore.WHITE}{name}: {Fore.YELLOW}{current}{
+          Fore.WHITE}|{Fore.GREEN}{requested}"
+    )
 
 
-def parse(response: ActionResponse) -> dict:
-    system('cls')
+def print_debug(response: ActionResponseFlattened):
+    system("cls")
 
     print(Fore.WHITE + "User query:")
     print(Fore.YELLOW + constants.USER_QUERY)
@@ -46,36 +66,56 @@ def parse(response: ActionResponse) -> dict:
 
     print(Fore.WHITE + "Action: " + Fore.GREEN + f"{response.action}")
     print(Fore.WHITE + "UI Element: " + Fore.GREEN + f"{response.label}")
-    print(Fore.WHITE + "Content (optional): " +
-          Fore.GREEN + f"{response.content}")
-    print(Fore.WHITE + "Select label (optional): " +
-          Fore.GREEN + f"{response.selectLabel}")
+    print(Fore.WHITE + "Content (optional): " + Fore.GREEN + f"{response.content}")
+    print(
+        Fore.WHITE
+        + "Select label (optional): "
+        + Fore.GREEN
+        + f"{response.selectLabel}"
+    )
+
+    # # Nested structure
+    # print()
+    # print_status("Name", response.status.status_name, response.status.request_name)
+    # print_status("Date", response.status.status_date, response.status.request_date)
+    # print_status("Time", response.status.status_time, response.status.request_time)
+    # print_status(
+    #     "# of ppl", response.status.status_count, response.status.request_count
+    # )
+    # print(
+    #     f"{Fore.WHITE}Matched per LLM? {
+    #       Fore.GREEN if response.status.match else Fore.YELLOW}{response.status.match}"
+    # )
+
+    # Flattened structure
+    print()
+    print_status("Name", response.status_name, response.request_name)
+    print_status("Date", response.status_date, response.request_date)
+    print_status("Time", response.status_time, response.request_time)
+    print_status("# of ppl", response.status_count, response.request_count)
+    print(
+        f"{Fore.WHITE}Matched per LLM? {
+          Fore.GREEN if response.match else Fore.YELLOW}{response.match}"
+    )
 
     print()
-    print_status("Name", response.status["status_name"],
-                 response.status["request_name"])
-    print_status(
-        "Date", response.status["status_date"], response.status["request_date"])
-    print_status(
-        "Time", response.status["status_time"], response.status["request_time"])
-    print_status(
-        "# of ppl", response.status["status_count"], response.status["request_count"])
-    print(f"{Fore.WHITE}Matched per LLM? {
-          Fore.GREEN if response.status["match"] else Fore.YELLOW}{response.status["match"]}")
-    print()
+
+
+def parse(response: ActionResponse) -> dict:
+    print_debug(response)
 
     if not response.action:
         return {"action": "retry", "args": f"Could not parse LLM Output."}
 
     action = response.action
     action_input = []
-    if action in ['Click', 'Type', 'ScrollUp', 'ScrollDown', 'Select']:
+    if action in ["Click", "Type", "ScrollUp", "ScrollDown", "Select"]:
         action_input.append(response.label)
 
-    if action in ['Type', 'ANSWER', 'Clarify', 'Navigate']:
+    if action in ["Type", "ANSWER", "Clarify", "Navigate"]:
         action_input.append(response.content)
 
-    if action in ['Select']:
+    if action in ["Select"]:
         action_input.append(response.selectLabel)
 
     return {"action": action, "args": action_input, "thought": response.thought}
@@ -124,9 +164,9 @@ def update_scratchpad_backup(state: AgentState):
         txt = old[0].content
         # last_line = txt.rsplit("\n", 1)[-1]
         # step = int(re.match(r"\d+", last_line).group()) + 1
-        txt = txt.replace("end\"\"\"", "")
+        txt = txt.replace('end"""', "")
     else:
-        txt = "Previous thoughts and actions taken (in order):\nText: \"\"\"\n"
+        txt = 'Previous thoughts and actions taken (in order):\nText: """\n'
         # step = 1
     scratchpad_step = state.get("step") or 0
     scratchpad_step = scratchpad_step + 1
@@ -136,8 +176,12 @@ def update_scratchpad_backup(state: AgentState):
     txt += f"\nThought: {state['prediction']['thought']}"
     txt += f"\nAction: {state['observation']}"
     txt += f"\n"
-    txt += "end\"\"\"\n"
+    txt += 'end"""\n'
 
     print(Fore.MAGENTA + txt)
 
-    return {**state, "scratchpad": [SystemMessage(content=txt)], "step": scratchpad_step}
+    return {
+        **state,
+        "scratchpad": [SystemMessage(content=txt)],
+        "step": scratchpad_step,
+    }

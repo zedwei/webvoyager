@@ -138,9 +138,9 @@ async def ask(state: AgentState):
     print(Fore.WHITE + "Please type your answer to this question:")
     print(Fore.YELLOW + f"Question: {ask_args[0]}" + Fore.GREEN)
     user_input = input()
-    
+
     # Append user input to ask_args so it can be used in scratchpad update
-    ask_args.append(user_input) 
+    ask_args.append(user_input)
     return f'Question: "{ask_args[0]}"  Answer from user: "{user_input}"'
 
 
@@ -149,9 +149,7 @@ async def select(state: AgentState):
         page = state["browser"].pages[-1]
         select_args = state["prediction"]["args"]
         if select_args is None or len(select_args) < 2:
-            return (
-                f"The Numerical_Label or target label to select is missing in the response."
-            )
+            return f"The Numerical_Label or target label to select is missing in the response."
 
         bbox_id = select_args[0]
         bbox_id = int(bbox_id)
@@ -161,7 +159,7 @@ async def select(state: AgentState):
         x, y = bbox["x"], bbox["y"]
 
         offset = await page.evaluate(f'getSelectOffset({bbox_id}, "{value}")')
-        
+
         # Start interacting with browser
         # Step 1: Expand the selection list
         await page.mouse.click(x, y)
@@ -178,4 +176,3 @@ async def select(state: AgentState):
         return f"Failed to select the target item in the dropdown list. Try clicking the target instead."
     else:
         return f"Selected the target item in the dropdown list."
-

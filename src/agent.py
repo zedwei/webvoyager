@@ -25,11 +25,19 @@ def readPromptTemplate():
         file_content = file.read()
         return file_content
 
+
 class Agent:
     def __init__(self):
         # llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=16384)
         llm = ChatOpenAI(model=constants.OPENAI_MODEL, max_tokens=16384)
-        llm = llm.with_structured_output(ActionResponse).with_retry(stop_after_attempt=3)
+
+        # # Nested
+        # llm = llm.with_structured_output(ActionResponse).with_retry(stop_after_attempt=3)
+
+        # Flattened
+        llm = llm.with_structured_output(ActionResponseFlattened).with_retry(
+            stop_after_attempt=3
+        )
 
         prompt = ChatPromptTemplate(
             messages=[
@@ -48,8 +56,15 @@ class Agent:
                             ],
                         ),
                         PromptTemplate.from_template("{bbox_descriptions}"),
-                        PromptTemplate.from_template("{current_url}"),
+                        # TODO: Temporarily exclude full URL string from grounding as 
+                        # its parameter sometimes include incorrect date information which confuses LLM.
+                        # It needs to be brought back.
+                        # PromptTemplate.from_template("\n{current_url}"),
                     ],
+                ),
+                MessagesPlaceholder(
+                    optional=True,
+                    variable_name="action_response",
                 ),
                 MessagesPlaceholder(
                     optional=True,
