@@ -37,33 +37,33 @@ class AgentState(TypedDict):
 
 
 class RestaurantBooking(TypedDict):
-    request_name: Optional[str] = Field(
+    request_name: str = Field(
         "Name of the restaurant in user's request instead of from current web page")
     request_date: Optional[date] = Field(
         "date of the booking in user's request instead of from current web page")
     request_time: Optional[time] = Field(
         "Time of the booking in user's request instead of from current web page")
-    request_count: Optional[int] = Field(
+    request_count: int = Field(
         "Number of people of the booking in user's request instead of from current web page")
 
     status_name: Optional[str] = Field(
-        "Name of the restaurant in user's request")
+        "Name of the restaurant derived explicitly from [User Request] section")
     status_date: Optional[date] = Field(
-        "date of the booking in user's request")
+        "date of the booking derived explicitly from [User Request] section")
     status_time: Optional[time] = Field(
-        "Time of the booking in user's request")
+        "Time of the booking derived explicitly from [User Request] section")
     status_count: Optional[int] = Field(
-        "Number of people of the booking in user's request")
+        "Party size derived explicitly from [User Request] section")
 
     match: bool = Field(
-        "Whether the restaurant name, date, time, and number of people on the current webpage match user's request"
+        "Whether the restaurant name, date, time, and number of people on the current webpage match user's request derived explicitly from [User Request] section"
     )
 # Pydantic
 
 
 class ActionResponse(BaseModel):
     thought: str = Field(
-        description="A breif description of the action you're trying to perform"
+        description="A brief description of the action you're trying to perform"
     )
     action: str = Field(description="One Action type you choose.")
     label: Optional[int] = Field(

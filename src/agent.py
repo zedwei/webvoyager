@@ -16,6 +16,8 @@ from langchain.prompts.chat import MessagesPlaceholder
 from langchain.prompts.chat import HumanMessagePromptTemplate
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
+from langchain_core.output_parsers.pydantic import PydanticOutputParser
+from langchain.output_parsers.retry import RetryOutputParser
 
 
 def readPromptTemplate():
@@ -28,7 +30,7 @@ class Agent:
     def __init__(self):
         # llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=16384)
         llm = ChatOpenAI(model=constants.OPENAI_MODEL, max_tokens=16384)
-        llm = llm.with_structured_output(ActionResponse)
+        llm = llm.with_structured_output(ActionResponse).with_retry(stop_after_attempt=3)
 
         prompt = ChatPromptTemplate(
             messages=[
@@ -37,12 +39,19 @@ class Agent:
                         PromptTemplate.from_template(readPromptTemplate()),
                     ],
                 ),
+                # SystemMessagePromptTemplate(
+                #     prompt=[
+                #         PromptTemplate.from_template(
+                #             "Then the user will provide: Observation: {{A labeled screenshot Given by User}}")
+                #     ]
+                # ),
                 MessagesPlaceholder(
                     optional=True,
                     variable_name="scratchpad",
                 ),
                 HumanMessagePromptTemplate(
                     prompt=[
+                        PromptTemplate.from_template("[Current webpage]"),
                         ImagePromptTemplate(
                             template={"url": "data:image/png;base64,{img}"},
                             input_variables=[
@@ -51,9 +60,14 @@ class Agent:
                         ),
                         PromptTemplate.from_template("{bbox_descriptions}"),
                         PromptTemplate.from_template("{current_url}"),
-                        PromptTemplate.from_template("{input}"),
                     ],
                 ),
+                HumanMessagePromptTemplate(
+                    prompt=[
+                        PromptTemplate.from_template("[User Query]"),
+                        PromptTemplate.from_template("{input}"),
+                    ]
+                )
             ],
             input_variables=[
                 "bbox_descriptions",

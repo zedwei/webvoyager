@@ -1,9 +1,10 @@
 from os import system
 from interfaces import AgentState, ActionResponse
 from langgraph.graph import END
-from langchain_core.messages import SystemMessage
+from langchain_core.messages import SystemMessage, AIMessage, HumanMessage
 from colorama import Fore
 import constants
+
 
 def format_descriptions(state):
     labels = []
@@ -20,31 +21,47 @@ def format_descriptions(state):
 
     return {**state, "bbox_descriptions": bbox_descriptions, "current_url": url}
 
+
 def print_status(name, current, requested):
-    print(f"{Fore.WHITE}{name}: {Fore.YELLOW}{current}{Fore.WHITE}|{Fore.GREEN}{requested}")
+    # source = "not available"
+    # if by_user:
+    #     source = "user input"
+    # elif requested != None:
+    #     source = "model inferred"
+
+    print(f"{Fore.WHITE}{name}: {Fore.YELLOW}{current}{
+          Fore.WHITE}|{Fore.GREEN}{requested}")
+
 
 def parse(response: ActionResponse) -> dict:
     system('cls')
-    
+
     print(Fore.WHITE + "User query:")
     print(Fore.YELLOW + constants.USER_QUERY)
     print()
-    
+
     print(Fore.WHITE + "Agent thoughts:")
     print(Fore.CYAN + response.thought)
     print()
-    
+
     print(Fore.WHITE + "Action: " + Fore.GREEN + f"{response.action}")
     print(Fore.WHITE + "UI Element: " + Fore.GREEN + f"{response.label}")
-    print(Fore.WHITE + "Content (optional): " + Fore.GREEN + f"{response.content}")
-    print(Fore.WHITE + "Select label (optional): " + Fore.GREEN + f"{response.selectLabel}")
+    print(Fore.WHITE + "Content (optional): " +
+          Fore.GREEN + f"{response.content}")
+    print(Fore.WHITE + "Select label (optional): " +
+          Fore.GREEN + f"{response.selectLabel}")
 
     print()
-    print_status("Name", response.status["status_name"], response.status["request_name"])
-    print_status("Date", response.status["status_date"], response.status["request_date"])
-    print_status("Time", response.status["status_time"], response.status["request_time"])
-    print_status("# of ppl", response.status["status_count"], response.status["request_count"])
-    print(f"{Fore.WHITE}Matched per LLM? {Fore.GREEN if response.status["match"] else Fore.YELLOW}{response.status["match"]}")
+    print_status("Name", response.status["status_name"],
+                 response.status["request_name"])
+    print_status(
+        "Date", response.status["status_date"], response.status["request_date"])
+    print_status(
+        "Time", response.status["status_time"], response.status["request_time"])
+    print_status(
+        "# of ppl", response.status["status_count"], response.status["request_count"])
+    print(f"{Fore.WHITE}Matched per LLM? {
+          Fore.GREEN if response.status["match"] else Fore.YELLOW}{response.status["match"]}")
     print()
 
     if not response.action:
@@ -54,7 +71,7 @@ def parse(response: ActionResponse) -> dict:
     action_input = []
     if action in ['Click', 'Type', 'ScrollUp', 'ScrollDown', 'Select']:
         action_input.append(response.label)
-    
+
     if action in ['Type', 'ANSWER', 'Clarify', 'Navigate']:
         action_input.append(response.content)
 
@@ -78,8 +95,28 @@ def select_tool(state: AgentState):
     return action
 
 
-
 def update_scratchpad(state: AgentState):
+    scratchpad = state.get("scratchpad")
+    if scratchpad:
+        txt = scratchpad[0].content
+    else:
+        txt = f"[User Request]\n{constants.USER_QUERY}\n"
+
+    if state["prediction"]["action"].lower() == "clarify":
+
+        # Aggregate all user inputs and ground LLM
+        # TODO: error handling if args array is  ill-formated
+        ask_args = state["prediction"]["args"]
+        if ask_args and len(ask_args) >= 2:
+            question = ask_args[0]
+            answer = ask_args[-1]
+            txt = txt + f"\nClarification question: {question}\n"
+            txt = txt + f"Answer: {answer}\n"
+
+    return {**state, "scratchpad": [HumanMessage(content=txt)]}
+
+
+def update_scratchpad_backup(state: AgentState):
     """After a tool is invoked, we want to update
     the scratchpad so the agent is aware of its previous steps"""
     old = state.get("scratchpad")
@@ -93,7 +130,7 @@ def update_scratchpad(state: AgentState):
         # step = 1
     scratchpad_step = state.get("step") or 0
     scratchpad_step = scratchpad_step + 1
-    
+
     # txt += f"\n{step}. {state['observation']}"
     txt += f"\nStep {scratchpad_step}."
     txt += f"\nThought: {state['prediction']['thought']}"
