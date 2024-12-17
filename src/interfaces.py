@@ -46,26 +46,17 @@ class RestaurantBooking(TypedDict):
     request_count: int = Field(
         "Number of people of the booking in user's request instead of from current web page")
 
-    name_user: str = Field(
-        "If you know the requested restaurant name by user, briefly explain where you got it. E.g. from user typed, or from observation image.")
-    date_user: str = Field(
-        "If you know the requested booking date by user, briefly explain where you got it. E.g. from user typed, or from observation image.")
-    time_user: str = Field(
-        "If you know the requested booking time by user, briefly explain where you got it. E.g. from user typed, or from observation image.")
-    count_user: str = Field(
-        "If you know the requested number of people by user, briefly explain where you got it. E.g. from user typed, or from observation image.")
-
     status_name: Optional[str] = Field(
-        "Name of the restaurant in user's request")
+        "Name of the restaurant derived explicitly from [User Request] section")
     status_date: Optional[date] = Field(
-        "date of the booking in user's request")
+        "date of the booking derived explicitly from [User Request] section")
     status_time: Optional[time] = Field(
-        "Time of the booking in user's request")
+        "Time of the booking derived explicitly from [User Request] section")
     status_count: Optional[int] = Field(
-        "Number of people of the booking in user's request")
+        "Party size derived explicitly from [User Request] section")
 
     match: bool = Field(
-        "Whether the restaurant name, date, time, and number of people on the current webpage match user's request"
+        "Whether the restaurant name, date, time, and number of people on the current webpage match user's request derived explicitly from [User Request] section"
     )
 # Pydantic
 

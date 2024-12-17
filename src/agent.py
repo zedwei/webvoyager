@@ -14,7 +14,7 @@ from langchain.prompts.chat import ChatPromptTemplate
 from langchain.prompts.chat import SystemMessagePromptTemplate
 from langchain.prompts.chat import MessagesPlaceholder
 from langchain.prompts.chat import HumanMessagePromptTemplate
-from langchain_core.prompts import PromptTemplate, StringPromptTemplate
+from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 
 
@@ -37,18 +37,19 @@ class Agent:
                         PromptTemplate.from_template(readPromptTemplate()),
                     ],
                 ),
+                # SystemMessagePromptTemplate(
+                #     prompt=[
+                #         PromptTemplate.from_template(
+                #             "Then the user will provide: Observation: {{A labeled screenshot Given by User}}")
+                #     ]
+                # ),
                 MessagesPlaceholder(
                     optional=True,
                     variable_name="scratchpad",
                 ),
-                SystemMessagePromptTemplate(
-                    prompt=[
-                        PromptTemplate.from_template(
-                            "Then the user will provide: Observation: {{A labeled screenshot Given by User}}")
-                    ]
-                ),
                 HumanMessagePromptTemplate(
                     prompt=[
+                        PromptTemplate.from_template("[Current webpage]"),
                         ImagePromptTemplate(
                             template={"url": "data:image/png;base64,{img}"},
                             input_variables=[
@@ -57,9 +58,14 @@ class Agent:
                         ),
                         PromptTemplate.from_template("{bbox_descriptions}"),
                         PromptTemplate.from_template("{current_url}"),
-                        PromptTemplate.from_template("{input}"),
                     ],
                 ),
+                HumanMessagePromptTemplate(
+                    prompt=[
+                        PromptTemplate.from_template("[User Query]"),
+                        PromptTemplate.from_template("{input}"),
+                    ]
+                )
             ],
             input_variables=[
                 "bbox_descriptions",

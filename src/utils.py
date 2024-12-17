@@ -22,7 +22,7 @@ def format_descriptions(state):
     return {**state, "bbox_descriptions": bbox_descriptions, "current_url": url}
 
 
-def print_status(name, current, requested, by_user):
+def print_status(name, current, requested):
     # source = "not available"
     # if by_user:
     #     source = "user input"
@@ -30,7 +30,7 @@ def print_status(name, current, requested, by_user):
     #     source = "model inferred"
 
     print(f"{Fore.WHITE}{name}: {Fore.YELLOW}{current}{
-          Fore.WHITE}|{Fore.GREEN}{requested} ({by_user})")
+          Fore.WHITE}|{Fore.GREEN}{requested}")
 
 
 def parse(response: ActionResponse) -> dict:
@@ -53,13 +53,13 @@ def parse(response: ActionResponse) -> dict:
 
     print()
     print_status("Name", response.status["status_name"],
-                 response.status["request_name"], response.status["name_user"])
+                 response.status["request_name"])
     print_status(
-        "Date", response.status["status_date"], response.status["request_date"], response.status["date_user"])
+        "Date", response.status["status_date"], response.status["request_date"])
     print_status(
-        "Time", response.status["status_time"], response.status["request_time"], response.status["time_user"])
+        "Time", response.status["status_time"], response.status["request_time"])
     print_status(
-        "# of ppl", response.status["status_count"], response.status["request_count"], response.status["count_user"])
+        "# of ppl", response.status["status_count"], response.status["request_count"])
     print(f"{Fore.WHITE}Matched per LLM? {
           Fore.GREEN if response.status["match"] else Fore.YELLOW}{response.status["match"]}")
     print()
@@ -97,21 +97,23 @@ def select_tool(state: AgentState):
 
 def update_scratchpad(state: AgentState):
     scratchpad = state.get("scratchpad")
+    if scratchpad:
+        txt = scratchpad[0].content
+    else:
+        txt = f"[User Request]\n{constants.USER_QUERY}\n"
+
     if state["prediction"]["action"].lower() == "clarify":
-        if not scratchpad:
-            scratchpad = [SystemMessage(
-                content="[User Request]")]
 
         # Aggregate all user inputs and ground LLM
         # TODO: error handling if args array is  ill-formated
-            ask_args = state["prediction"]["args"]
-            if ask_args and len(ask_args) >= 2:
-                question = ask_args[0]
-                answer = ask_args[-1]
-                scratchpad.append(AIMessage(f"Question: {question}"))
-                scratchpad.append(HumanMessage(f"{answer}"))
+        ask_args = state["prediction"]["args"]
+        if ask_args and len(ask_args) >= 2:
+            question = ask_args[0]
+            answer = ask_args[-1]
+            txt = txt + f"\nClarification question: {question}\n"
+            txt = txt + f"Answer: {answer}\n"
 
-    return {**state, "scratchpad": scratchpad}
+    return {**state, "scratchpad": [HumanMessage(content=txt)]}
 
 
 def update_scratchpad_backup(state: AgentState):

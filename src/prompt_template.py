@@ -12,37 +12,3 @@ def readPromptTemplate():
         file_content = file.read()
         return file_content
 
-
-prompt = ChatPromptTemplate(
-    messages=[
-        SystemMessagePromptTemplate(
-            prompt=[
-                PromptTemplate.from_template(readPromptTemplate()),
-            ],
-        ),
-        HumanMessagePromptTemplate(
-            prompt=[
-                ImagePromptTemplate(
-                    template={"url": "data:image/png;base64,{img}"},
-                    input_variables=[
-                        "img",
-                    ],
-                ),
-                PromptTemplate.from_template("{bbox_descriptions}"),
-                PromptTemplate.from_template("{current_url}"),
-                PromptTemplate.from_template("[User Input]"),
-                PromptTemplate.from_template("{input}"),
-            ],
-        ),
-        MessagesPlaceholder(
-            optional=True,
-            variable_name="scratchpad",
-        ),
-    ],
-    input_variables=[
-        "bbox_descriptions",
-        "img",
-        "input",
-    ],
-    partial_variables={"scratchpad": []},
-)
