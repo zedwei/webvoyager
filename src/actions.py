@@ -145,33 +145,37 @@ async def ask(state: AgentState):
 
 
 async def select(state: AgentState):
-    page = state["browser"].pages[-1]
-    select_args = state["prediction"]["args"]
-    if select_args is None or len(select_args) < 2:
-        return (
-            f"The Numerical_Label or target label to select is missing in the response."
-        )
+    try:
+        page = state["browser"].pages[-1]
+        select_args = state["prediction"]["args"]
+        if select_args is None or len(select_args) < 2:
+            return (
+                f"The Numerical_Label or target label to select is missing in the response."
+            )
 
-    bbox_id = select_args[0]
-    bbox_id = int(bbox_id)
-    value = select_args[1]
+        bbox_id = select_args[0]
+        bbox_id = int(bbox_id)
+        value = select_args[1]
 
-    bbox = state["bboxes"][bbox_id]
-    x, y = bbox["x"], bbox["y"]
+        bbox = state["bboxes"][bbox_id]
+        x, y = bbox["x"], bbox["y"]
 
-    offset = await page.evaluate(f'getSelectOffset({bbox_id}, "{value}")')
-    
-    # Start interacting with browser
-    # Step 1: Expand the selection list
-    await page.mouse.click(x, y)
-    time.sleep(2)
+        offset = await page.evaluate(f'getSelectOffset({bbox_id}, "{value}")')
+        
+        # Start interacting with browser
+        # Step 1: Expand the selection list
+        await page.mouse.click(x, y)
+        time.sleep(2)
 
-    # Step 2: Press Up or Down keyboard to select the target value
-    for _ in range(abs(offset)):
-        await page.keyboard.press("ArrowDown" if offset > 0 else "ArrowUp")
-        time.sleep(0.2)
+        # Step 2: Press Up or Down keyboard to select the target value
+        for _ in range(abs(offset)):
+            await page.keyboard.press("ArrowDown" if offset > 0 else "ArrowUp")
+            time.sleep(0.2)
 
-    # Step 3: Press Enter to confirm selection
-    await page.keyboard.press("Enter")
+        # Step 3: Press Enter to confirm selection
+        await page.keyboard.press("Enter")
+    except:
+        return f"Failed to select the target item in the dropdown list. Try clicking the target instead."
+    else:
+        return f"Selected the target item in the dropdown list."
 
-    return f"Selected the target item in the dropdown list."
