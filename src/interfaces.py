@@ -38,25 +38,25 @@ class AgentState(TypedDict):
 
 class RestaurantBooking(TypedDict):
     request_name: str = Field(
-        "Name of the restaurant in user's request instead of from current web page")
+        description="Derived Restaurant Name from [User Request] section")
     request_date: Optional[date] = Field(
-        "date of the booking in user's request instead of from current web page")
+        description="Derived Booking Date from [User Request] section")
     request_time: Optional[time] = Field(
-        "Time of the booking in user's request instead of from current web page")
+        description="Derived Booking Time from [User Request] section")
     request_count: int = Field(
-        "Number of people of the booking in user's request instead of from current web page")
+        description="Derived Party Size from [User Request] section")
 
     status_name: Optional[str] = Field(
-        "Name of the restaurant derived explicitly from [User Request] section")
+        description="Derived Restaurant Name from [Current webpage] section")
     status_date: Optional[date] = Field(
-        "date of the booking derived explicitly from [User Request] section")
+        description="Derived Booking Date from [Current webpage] section")
     status_time: Optional[time] = Field(
-        "Time of the booking derived explicitly from [User Request] section")
+        description="Derived Booking Time from [Current webpage] section")
     status_count: Optional[int] = Field(
-        "Party size derived explicitly from [User Request] section")
+        description="Derived Party Size from [Current webpage] section")
 
     match: bool = Field(
-        "Whether the restaurant name, date, time, and number of people on the current webpage match user's request derived explicitly from [User Request] section"
+        description="Whether the restaurant name, date, time, and party size match between the [Current webpage] section and the [User Request] section"
     )
 # Pydantic
 

@@ -25,7 +25,6 @@ def readPromptTemplate():
         file_content = file.read()
         return file_content
 
-
 class Agent:
     def __init__(self):
         # llm = ChatOpenAI(model="gpt-4o-mini", max_tokens=16384)
@@ -38,16 +37,6 @@ class Agent:
                     prompt=[
                         PromptTemplate.from_template(readPromptTemplate()),
                     ],
-                ),
-                # SystemMessagePromptTemplate(
-                #     prompt=[
-                #         PromptTemplate.from_template(
-                #             "Then the user will provide: Observation: {{A labeled screenshot Given by User}}")
-                #     ]
-                # ),
-                MessagesPlaceholder(
-                    optional=True,
-                    variable_name="scratchpad",
                 ),
                 HumanMessagePromptTemplate(
                     prompt=[
@@ -62,12 +51,16 @@ class Agent:
                         PromptTemplate.from_template("{current_url}"),
                     ],
                 ),
-                HumanMessagePromptTemplate(
-                    prompt=[
-                        PromptTemplate.from_template("[User Query]"),
-                        PromptTemplate.from_template("{input}"),
-                    ]
-                )
+                MessagesPlaceholder(
+                    optional=True,
+                    variable_name="scratchpad",
+                ),
+                # HumanMessagePromptTemplate(
+                #     prompt=[
+                #         PromptTemplate.from_template("[User Query]"),
+                #         PromptTemplate.from_template("{input}"),
+                #     ]
+                # )
             ],
             input_variables=[
                 "bbox_descriptions",
