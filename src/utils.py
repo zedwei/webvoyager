@@ -101,7 +101,7 @@ def print_debug(response: ActionResponseFlattened):
     print()
 
 
-def parse(response: ActionResponse) -> dict:
+def parse(response: ActionResponseFlattened) -> dict:
     print_debug(response)
 
     if not response.action:
