@@ -5,13 +5,14 @@ import time
 from agent import AgentState
 from mark_page import mark_rect_once
 from colorama import Fore
+from langchain_core.messages import HumanMessage
 
 
 async def click(state: AgentState):
     # - Click [Numerical_Label]
     # page = state["page"]
     page = state["browser"].pages[-1]
-    click_args = state["prediction"]["args"]
+    click_args = state["execution"]["args"]
     if click_args is None or len(click_args) != 1:
         return f"Failed to click bounding box labeled as number {click_args}"
     bbox_id = click_args[0]
@@ -34,7 +35,7 @@ async def click(state: AgentState):
 async def type_text(state: AgentState):
     # page = state["page"]
     page = state["browser"].pages[-1]
-    type_args = state["prediction"]["args"]
+    type_args = state["execution"]["args"]
     if type_args is None or len(type_args) != 2:
         return f"Failed to type in element from bounding box labeled as number {
             type_args}"
@@ -58,13 +59,13 @@ async def type_text(state: AgentState):
 async def scroll(state: AgentState):
     # page = state["page"]
     page = state["browser"].pages[-1]
-    scroll_args = state["prediction"]["args"]
+    scroll_args = state["execution"]["args"]
     if scroll_args is None or len(scroll_args) != 1:
         return "Failed to scroll due to incorrect arguments."
 
     bbox_id = scroll_args[0]
     bbox_id = int(bbox_id)
-    direction = "up" if state["prediction"]["action"].lower() == "scrollup" else "down"
+    direction = "up" if state["execution"]["action"].lower() == "scrollup" else "down"
 
     if bbox_id == -1:
         # Not sure the best value for this:
@@ -102,7 +103,7 @@ async def go_back(state: AgentState):
 
 async def navigate(state: AgentState):
     page = state["browser"].pages[-1]
-    navigate_args = state["prediction"]["args"]
+    navigate_args = state["execution"]["args"]
     if navigate_args is None or len(navigate_args) < 1:
         return "Failed to scroll due to incorrect arguments."
     url = navigate_args[0]
@@ -131,7 +132,7 @@ async def human_signin(state: AgentState):
 
 
 async def ask(state: AgentState):
-    ask_args = state["prediction"]["args"]
+    ask_args = state["execution"]["args"]
     if ask_args is None or len(ask_args) < 1:
         return f"Failed to ask question to user."
 
@@ -141,13 +142,13 @@ async def ask(state: AgentState):
 
     # Append user input to ask_args so it can be used in scratchpad update
     ask_args.append(user_input)
-    return f'Question: "{ask_args[0]}"  Answer from user: "{user_input}"'
+    return f'Clarification question: "{ask_args[0]}"\nAnswer from user: "{user_input}"\n'
 
 
 async def select(state: AgentState):
     try:
         page = state["browser"].pages[-1]
-        select_args = state["prediction"]["args"]
+        select_args = state["execution"]["args"]
         if select_args is None or len(select_args) < 2:
             return f"The Numerical_Label or target label to select is missing in the response."
 

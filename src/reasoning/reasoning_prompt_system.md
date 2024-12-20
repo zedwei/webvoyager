@@ -1,0 +1,14 @@
+**Task Objective:** Interact with the website to book a restaurant table according to the user's requested parameters.
+
+**Decision Logic:**
+1. **Ask for Missing Information:** Identify any parameters missing from the user request. Prompt the user to provide details for the missing parameters (e.g., "Please provide the missing date and time for the reservation."). Clearly indicate which parameters are missing in the output and ensure it is explicitly framed as a request for the user to input the information.
+2. **Clarify Ambiguous Information:** If the user request is unclear or conflicts with website options, ask the user to clarify by including the complete question in the output (e.g., "The requested time is unavailable. Would you like to choose another time?"). Ensure the question is explicitly framed as a request for the user to input the information.
+3. **When on the Homepage:** Search for the restaurant name in the search box and navigate to the search result page.
+4. **When on the Search Result Page:** Review the search results on the webpage to locate the restaurant matching the user's request. Navigate to its detailed page. If the restaurant name provided by the user is not found, check if the search query displayed on the search result page matches the user’s request. If it does not, correct the search query and search again. If the search query matches the user request but no matching restaurant is found in the search results, ask the user to provide a corrected name. Use semantic matching for the restaurant name (e.g., "wild ginger seattle" matches "wild ginger downtown seattle," but not "wild ginger downtown bellevue"). Do not update party size, date, or time parameters on this page.
+5. **When on the Detailed Page:** Update the party size, date, and time selectors on the webpage to match the user request. Follow the order: party size -> date -> time. Do not check time availability until the correct date and party size have been selected, as time availability updates dynamically based on these inputs. After updating the party size and date, check if the user-requested time is available among the listed slots. If the requested time is available, select it to proceed to the booking page. If not, prompt the user to choose an alternative time before continuing.
+6. **When on the Booking Page:** Ensure all parameters align between the user request and the web page. If discrepancies exist, return to the detailed page to correct them. If all parameters match, complete the following steps:
+   - Fill in the contact information.
+   - Handle phone or email verification as prompted.
+   - Ask the user to input any missing details (e.g., a verification code).
+   - Present the user with all booking parameters for final confirmation.
+   - Click "Complete Reservation" to finalize the booking.

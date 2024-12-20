@@ -4,7 +4,7 @@ from playwright.async_api import async_playwright
 from getpass import getpass
 from agent import Agent
 from colorama import init as initColorma, Fore
-import constants
+import globals
 
 
 def _getpass(env_var: str):
@@ -20,25 +20,16 @@ def init():
     # Get OpenAI API Key
     _getpass("OPENAI_API_KEY")
 
-    # Choose the prompt file to use
-    prompt_list = os.listdir("./src/prompts")
-    print(Fore.WHITE + "Choose the prompt template:")
-    for prompt_idx in range(len(prompt_list)):
-        print(Fore.YELLOW + f"{prompt_idx+1}. {prompt_list[prompt_idx]}")
-    print(Fore.WHITE + "Select: ", end=" ")
-    prompt_file = input()
-    constants.PROMPT_FILENAME = prompt_list[int(prompt_file) - 1]
-    print()
+    os.system("cls")
 
     # Input query
-    if not constants.USER_QUERY:
+    if not globals.USER_QUERY:
         print(Fore.WHITE + "Please input your query: " + Fore.YELLOW)
-        constants.USER_QUERY = input()
+        globals.USER_QUERY = input()
     print()
 
 
 async def main():
-    os.system("cls")
     print(Fore.YELLOW + "Initiating browser and starting agent...")
 
     agent = Agent()
@@ -63,10 +54,11 @@ async def main():
 
     # _ = await page.goto("https://www.google.com")
     # _ = await page.goto("https://www.bing.com")
-    res = await agent.call_agent(constants.USER_QUERY, context, page)
+    await page.goto("https://www.opentable.com")
+    # await page.goto("https://www.opentable.com/matts-rotisserie-and-oyster-lounge?originId=1e72004c-6c35-4254-aaaa-f5798c9a1706&corrid=1e72004c-6c35-4254-aaaa-f5798c9a1706&avt=eyJ2IjoyLCJtIjoxLCJwIjowLCJzIjowLCJuIjowfQ")
+    # await page.goto("https://www.opentable.com/s?dateTime=2024-12-19T19%3A00%3A00&covers=2&latitude=47.6722&longitude=-122.1257&term=wild%20ginger%20&shouldUseLatLongSearch=true&originCorrelationId=0bb98f84-070c-4a67-b1ac-c9cdaae20a17&corrid=f0d11a68-64ad-4cb3-9a14-5d6a6e72ee5c&intentModifiedTerm=wild%20ginger&metroId=2&originalTerm=wild%20ginger%20&pinnedRid=39454&queryUnderstandingType=default&sortBy=web_conversion")
 
-    print(Fore.WHITE + "Final Response:")
-    print(Fore.GREEN + res)
+    await agent.call_agent(globals.USER_QUERY, context)
 
 
 if __name__ == "__main__":
