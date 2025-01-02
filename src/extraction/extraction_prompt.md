@@ -31,12 +31,6 @@ You are tasked with extracting restaurant booking parameters from three sources:
 - Do not extract parameters from the web page URL as it may reflect outdated or incorrect information.
 - Prioritize information explicitly visible or highlighted.
 - Identify key details displayed on the page, focusing on date, time, party size, restaurant name, and page category.
-- Assign the "Web Page Category" based on the structure and content of the web page, as well as the information in the current URL. Analyze the URL to infer the page type, considering common patterns like '/search', '/details', or '/booking' for guidance. Choose one of the following values: Homepage, Search result page, Detailed page, Booking page.
-- Do not extract parameters from the web page URL as it may reflect outdated or incorrect information.
-- Prioritize information explicitly visible or highlighted.
-- Identify key details displayed on the page, focusing on date, time, party size, and restaurant name.
-- Do not extract parameters from the web page URL as it may reflect outdated or incorrect information.
-- Prioritize information explicitly visible or highlighted.
 
 ### Web Page Category for OpenTable.com URLs:
 - When analyzing web pages from OpenTable.com, determine the category as follows:
