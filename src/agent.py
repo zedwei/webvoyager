@@ -58,10 +58,10 @@ class Agent:
 
         self.graph = graph_builder.compile()
 
-    async def call_agent(self, question: str, browser_context, max_steps: int = 150):
+    async def call_agent(self, question: str, client, max_steps: int = 150):
         event_stream = self.graph.astream(
             {
-                "browser": browser_context,
+                "browser": client,
                 "input": question,
                 "scratchpad": [],
                 "date_today": datetime.today().strftime("%Y-%m-%d"),

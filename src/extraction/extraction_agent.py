@@ -13,8 +13,8 @@ def pre_process(state: AgentState):
     if not scratchpad:
         scratchpad = [HumanMessage(content=f"[User Request]\n{globals.USER_QUERY}\n")]
 
-    page = state["browser"].pages[-1]
-    url = f"{page.url}"
+    browser = state["browser"]
+    url = browser.url()
 
     return {
         **state,

@@ -1,17 +1,12 @@
 # %%
 import asyncio
-import platform
 import time
 from agent import AgentState
-from mark_page import mark_rect_once
 from colorama import Fore
-from langchain_core.messages import HumanMessage
 
 
 async def click(state: AgentState):
-    # - Click [Numerical_Label]
-    # page = state["page"]
-    page = state["browser"].pages[-1]
+    browser = state["browser"]
     click_args = state["execution"]["args"]
     if click_args is None or len(click_args) != 1:
         return f"Failed to click bounding box labeled as number {click_args}"
@@ -23,18 +18,18 @@ async def click(state: AgentState):
         return f"Error: no bbox for : {bbox_id}"
     x, y = bbox["x"], bbox["y"]
 
-    await mark_rect_once(page, bbox_id)
+    # Show a rectangle around the click target for 2 secs to inform user
+    await browser.run_js(f"markRect({bbox_id})")
+    time.sleep(2)
+    await browser.run_js(f"unmarkPage()")
 
-    await page.mouse.click(x, y)
-    # TODO: In the paper, they automatically parse any downloaded PDFs
-    # We could add something similar here as well and generally
-    # improve response format.
+    await browser.click(x, y)
+
     return f"Clicked {bbox_id}: {bbox["text"] or bbox["ariaLabel"]}"
 
 
 async def type_text(state: AgentState):
-    # page = state["page"]
-    page = state["browser"].pages[-1]
+    browser = state["browser"]
     type_args = state["execution"]["args"]
     if type_args is None or len(type_args) != 2:
         return f"Failed to type in element from bounding box labeled as number {
@@ -44,21 +39,20 @@ async def type_text(state: AgentState):
     bbox = state["bboxes"][bbox_id]
     x, y = bbox["x"], bbox["y"]
     text_content = type_args[1]
-    await mark_rect_once(page, bbox_id)
-    await page.mouse.click(x, y)
-    # Check if MacOS
-    select_all = "Meta+A" if platform.system() == "Darwin" else "Control+A"
-    await page.keyboard.press(select_all)
-    await page.keyboard.press("Backspace")
-    await page.keyboard.type(text_content)
+
+    await browser.run_js(f"markRect({bbox_id})")
     time.sleep(2)
-    await page.keyboard.press("Enter")
+    await browser.run_js(f"unmarkPage()")
+
+    await browser.click(x, y)
+    await browser.type(text_content)
+
     return f"Typed {text_content} and submitted"
 
 
 async def scroll(state: AgentState):
     # page = state["page"]
-    page = state["browser"].pages[-1]
+    browser = state["browser"]
     scroll_args = state["execution"]["args"]
     if scroll_args is None or len(scroll_args) != 1:
         return "Failed to scroll due to incorrect arguments."
@@ -67,25 +61,12 @@ async def scroll(state: AgentState):
     bbox_id = int(bbox_id)
     direction = "up" if state["execution"]["action"].lower() == "scrollup" else "down"
 
-    if bbox_id == -1:
-        # Not sure the best value for this:
-        scroll_amount = 500
-        scroll_direction = (
-            -scroll_amount if direction.lower() == "up" else scroll_amount
-        )
-        await page.evaluate(f"window.scrollBy(0, {scroll_direction})")
-    else:
-        # Scrolling within a specific element
-        scroll_amount = 200
-        bbox = state["bboxes"][bbox_id]
-        x, y = bbox["x"], bbox["y"]
-        scroll_direction = (
-            -scroll_amount if direction.lower() == "up" else scroll_amount
-        )
-        await page.mouse.move(x, y)
-        await page.mouse.wheel(0, scroll_direction)
+    # TODO: missing support of scroll within an element
+    scroll_amount = 500
+    offset = -scroll_amount if direction.lower() == "up" else scroll_amount
+    await browser.scroll(offset)
 
-    return f"Scrolled {direction} in {'window' if bbox_id == -1 else 'element'}"
+    return f"Scrolled {direction} in window"
 
 
 async def wait(state: AgentState):
@@ -95,20 +76,19 @@ async def wait(state: AgentState):
 
 
 async def go_back(state: AgentState):
-    # page = state["page"]
-    page = state["browser"].pages[-1]
-    await page.go_back()
-    return f"Navigated back a page to {page.url}."
+    browser = state["browser"]
+    await browser.go_back()
+    return f"Navigated back a page to {browser.pages[-1].url}."
 
 
 async def navigate(state: AgentState):
-    page = state["browser"].pages[-1]
+    browser = state["browser"]
     navigate_args = state["execution"]["args"]
     if navigate_args is None or len(navigate_args) < 1:
         return "Failed to scroll due to incorrect arguments."
     url = navigate_args[0]
     try:
-        await page.goto(url)
+        await browser.navigate(url)
     except:
         return f"Failed to navigate to {url}."
 
@@ -116,38 +96,39 @@ async def navigate(state: AgentState):
 
 
 async def to_search(state: AgentState):
-    # page = state["page"]
-    page = state["browser"].pages[-1]
-    # await page.goto("https://www.google.com/")
-    # return "Navigated to google.com."
-    await page.goto("https://www.bing.com/")
+    browser = state["browser"]
+    await browser.search()
     return "Navigated to bing.com."
 
 
 async def human_signin(state: AgentState):
-    user_input = input(
+    browser = state["browser"]
+    await browser.user_clarify(
         "Please manually sign-in to continue the flow. Press Enter once it's signed in."
     )
+
     return "User manually signed in."
 
 
 async def ask(state: AgentState):
+    browser = state["browser"]
+
     ask_args = state["execution"]["args"]
     if ask_args is None or len(ask_args) < 1:
         return f"Failed to ask question to user."
 
-    print(Fore.WHITE + "Please type your answer to this question:")
-    print(Fore.YELLOW + f"Question: {ask_args[0]}" + Fore.GREEN)
-    user_input = input()
+    user_input = await browser.user_clarify(ask_args[0])
 
     # Append user input to ask_args so it can be used in scratchpad update
     ask_args.append(user_input)
-    return f'Clarification question: "{ask_args[0]}"\nAnswer from user: "{user_input}"\n'
+    return (
+        f'Clarification question: "{ask_args[0]}"\nAnswer from user: "{user_input}"\n'
+    )
 
 
 async def select(state: AgentState):
     try:
-        page = state["browser"].pages[-1]
+        browser = state["browser"]
         select_args = state["execution"]["args"]
         if select_args is None or len(select_args) < 2:
             return f"The Numerical_Label or target label to select is missing in the response."
@@ -159,20 +140,19 @@ async def select(state: AgentState):
         bbox = state["bboxes"][bbox_id]
         x, y = bbox["x"], bbox["y"]
 
-        offset = await page.evaluate(f'getSelectOffset({bbox_id}, "{value}")')
+        offset = await browser.run_js(f'getSelectOffset({bbox_id}, "{value}")')
 
         # Start interacting with browser
         # Step 1: Expand the selection list
-        await page.mouse.click(x, y)
+        await browser.click(x, y)
         time.sleep(2)
 
         # Step 2: Press Up or Down keyboard to select the target value
         for _ in range(abs(offset)):
-            await page.keyboard.press("ArrowDown" if offset > 0 else "ArrowUp")
-            time.sleep(0.2)
+            await browser.press("ArrowDown" if offset > 0 else "ArrowUp")
 
         # Step 3: Press Enter to confirm selection
-        await page.keyboard.press("Enter")
+        await browser.press("Enter")
     except:
         return f"Failed to select the target item in the dropdown list. Try clicking the target instead."
     else:

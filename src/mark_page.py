@@ -12,20 +12,20 @@ with open("./src/mark_page.js") as f:
 
 
 @chain_decorator
-async def mark_page(page):
-    await page.evaluate(mark_page_script)
+async def mark_page(browser):
+    await browser.run_js(mark_page_script)
     for _ in range(10):
         try:
-            bboxes = await page.evaluate("markPage()")
+            bboxes = await browser.run_js("markPage()")
             break
         except Exception:
             # May be loading...
             await asyncio.sleep(3)
-    screenshot = await page.screenshot()
+    screenshot = await browser.screenshot()
 
     # Ensure the bboxes don't follow us around
     # RANWEI: Keep bounding box for debugging purpose
-    await page.evaluate("unmarkPage()")
+    await browser.run_js("unmarkPage()")
 
     # print(Fore.YELLOW + f"Marked page with {len(bboxes)} bboxes.")
 
@@ -35,29 +35,17 @@ async def mark_page(page):
     }
 
 
-async def mark_rect_once(page, index):
-    try:
-        await page.evaluate(f"markRect({index})")
-    except:
-        print(
-            Fore.RED
-            + "Error in marking clicking target. Continue with execution without marking."
-        )
-    time.sleep(3)
-    await page.evaluate("unmarkPage()")
-
-
 async def annotate(state):
     await asyncio.sleep(2)
-    page = state["browser"].pages[-1]
-    marked_page = await mark_page.with_retry().ainvoke(page)
+    browser = state["browser"]
+    marked_page = await mark_page.with_retry().ainvoke(browser)
     return {**state, **marked_page}
 
 
 async def screenshot(state):
     await asyncio.sleep(2)
-    page = state["browser"].pages[-1]
-    screenshot = await page.screenshot()
+    browser = state["browser"]
+    screenshot = await browser.screenshot()
     return {
         **state,
         "img": base64.b64encode(screenshot).decode(),
