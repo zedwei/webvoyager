@@ -8,13 +8,13 @@ from extraction.extraction_prompt import extraction_prompt, ExtractionResponse
 from utils import print_debug
 
 
-def pre_process(state: AgentState):
+async def pre_process(state: AgentState):
     scratchpad = state["scratchpad"]
     if not scratchpad:
         scratchpad = [HumanMessage(content=f"[User Request]\n{globals.USER_QUERY}\n")]
 
     browser = state["browser"]
-    url = browser.url()
+    url = await browser.url()
 
     return {
         **state,

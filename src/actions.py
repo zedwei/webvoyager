@@ -44,8 +44,8 @@ async def type_text(state: AgentState):
     time.sleep(2)
     await browser.run_js(f"unmarkPage()")
 
-    await browser.click(x, y)
-    await browser.type(text_content)
+    # await browser.click(x, y)
+    await browser.type(x, y, text_content)
 
     return f"Typed {text_content} and submitted"
 
@@ -149,10 +149,10 @@ async def select(state: AgentState):
 
         # Step 2: Press Up or Down keyboard to select the target value
         for _ in range(abs(offset)):
-            await browser.press("ArrowDown" if offset > 0 else "ArrowUp")
+            await browser.keypress("ArrowDown" if offset > 0 else "ArrowUp")
 
         # Step 3: Press Enter to confirm selection
-        await browser.press("Enter")
+        await browser.keypress("Enter")
     except:
         return f"Failed to select the target item in the dropdown list. Try clicking the target instead."
     else:

@@ -4,12 +4,12 @@ from abc import ABC, abstractmethod
 
 class ClientMode(Enum):
     LOCAL = 1
-    SERVER = 2
+    WEBSOCKET = 2
 
 
 class Client(ABC):
     @abstractmethod
-    async def init(self):
+    async def run(self):
         pass
 
     @abstractmethod
@@ -29,11 +29,7 @@ class Client(ABC):
         pass
 
     @abstractmethod
-    async def type(self, text):
-        pass
-
-    @abstractmethod
-    async def keypress(self, key):
+    async def type(self, x, y, text):
         pass
 
     @abstractmethod
@@ -64,3 +60,6 @@ class Client(ABC):
     async def url(self):
         pass
     
+    @abstractmethod
+    async def keypress(self, key):
+        pass

@@ -1,10 +1,10 @@
 import asyncio
 import os
+import sys
 from getpass import getpass
-from agent import Agent
 from colorama import init as initColorma, Fore
-import globals
 from client.local_client import LocalClient
+from client.websocket_client import WebSocketClient
 
 
 def _getpass(env_var: str):
@@ -24,22 +24,15 @@ def init():
 
 
 async def main():
+    if len(sys.argv) > 1:
+        client = WebSocketClient()
+    else:
+        client = LocalClient()
+
     print(Fore.YELLOW + "Initiating browser and starting agent...")
-
-    # Initialization
     init()
-    agent = Agent()
-    client = LocalClient()
-    await client.init()
 
-    # Wait for user input
-    await client.user_query()
-
-    # Navigate to OpenTable.com as starting point
-    await client.navigate("https://www.opentable.com")
-
-    # Start Agent loop
-    await agent.call_agent(globals.USER_QUERY, client)
+    await client.run()
 
 
 if __name__ == "__main__":

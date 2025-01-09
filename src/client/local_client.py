@@ -1,5 +1,6 @@
 from playwright.async_api import async_playwright
 from client.client import Client, ClientMode
+from agent import Agent
 import globals
 import platform
 import time
@@ -10,7 +11,7 @@ class LocalClient(Client):
     def __init__(self):
         self.mode = ClientMode.LOCAL
 
-    async def init(self):
+    async def run(self):
         browser = await async_playwright().start()
 
         # By default the agent will operate on a private window of the default profile
@@ -31,7 +32,15 @@ class LocalClient(Client):
         #     viewport={"width": 1280, "height": 1080}
         # )
 
-        return await super().init()
+        # Wait for user input
+        await self.user_query()
+
+        # Navigate to OpenTable.com as starting point
+        await self.navigate("https://www.opentable.com")
+
+        # Start Agent loop
+        agent = Agent()
+        await agent.call_agent(globals.USER_QUERY, self)
 
     async def user_query(self):
         # Input query
@@ -39,15 +48,12 @@ class LocalClient(Client):
             print(Fore.WHITE + "Please input your query: " + Fore.YELLOW)
             globals.USER_QUERY = input()
         print()
-        return await super().user_query()
 
     async def navigate(self, url):
         await self.context.pages[-1].goto(url)
-        return await super().navigate()
 
     async def click(self, x, y):
         await self.context.pages[-1].mouse.click(x, y)
-        return await super().click(x, y)
 
     async def run_js(self, script):
         try:
@@ -57,39 +63,27 @@ class LocalClient(Client):
             response = None
         return response
 
-    async def type(self, text):
+    async def type(self, x, y, text):
         page = self.context.pages[-1]
+        await page.mouse.click(x, y)
+        time.sleep(1)
         select_all = "Meta+A" if platform.system() == "Darwin" else "Control+A"
         await page.keyboard.press(select_all)
         await page.keyboard.press("Backspace")
         await page.keyboard.type(text)
         time.sleep(2)
         await page.keyboard.press("Enter")
-        return await super().type(text)
-
-    async def keypress(self, key):
-        await self.context.pages[-1].keyboard.press(key)
-        time.sleep(0.2)
-        return await super().keypress(key)
 
     async def scroll(self, offset):
         await self.run_js(f"window.scrollBy(0, {offset})")
-        return await super().scroll(offset)
 
     async def go_back(self):
         page = self.context.pages[-1]
         await page.go_back()
-        return await super().go_back()
-
-    async def navigate(self, url):
-        page = self.context.pages[-1]
-        await page.goto(url)
-        return await super().navigate(url)
 
     async def search(self):
         page = self.context.pages[-1]
         await page.goto("https://www.bing.com")
-        return await super().search()
 
     async def user_clarify(self, question):
         print(Fore.WHITE + "Please type your answer to this question:")
@@ -102,3 +96,7 @@ class LocalClient(Client):
 
     async def url(self):
         return self.context.pages[-1].url
+    
+    async def keypress(self, key):
+        await self.context.pages[-1].keyboard.press(key)
+        time.sleep(0.2)

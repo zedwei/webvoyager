@@ -5,6 +5,7 @@ from extraction.extraction_prompt import ExtractionResponse
 from reasoning.reasoning_prompt import ReasoningResponse
 from execution.execution_prompt import ExecutionResponse
 import globals
+import uuid
 
 
 def select_tool(state: AgentState):
@@ -76,3 +77,7 @@ def update_scratchpad(state: AgentState):
             txt = txt + f"Answer: {answer}\n"
 
     return {**state, "scratchpad": [HumanMessage(content=txt)]}
+
+def gen_id():
+    # return str(uuid.uuid4())
+    return "df1e4077-59c6-4b8a-9e1f-f45b3e68f54e"  # hardcode id for testing purpose
