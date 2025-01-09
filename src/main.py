@@ -25,7 +25,7 @@ def init():
 
 async def main():
     if len(sys.argv) > 1:
-        client = WebSocketClient()
+        client = WebSocketClient(int(sys.argv[1]))
     else:
         client = LocalClient()
 

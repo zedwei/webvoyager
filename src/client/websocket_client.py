@@ -12,8 +12,9 @@ from utils import gen_id
 
 
 class WebSocketClient(Client):
-    def __init__(self):
+    def __init__(self, port):
         self.mode = ClientMode.WEBSOCKET
+        self.port = port
 
     async def run_server(self, websocket):
         print(Fore.GREEN + "New client connected")
@@ -35,7 +36,7 @@ class WebSocketClient(Client):
         #     await websocket.send(f"Echo: {msg["id"]}")
 
     async def run(self):
-        async with websockets.serve(self.run_server, "localhost", 8765):
+        async with websockets.serve(self.run_server, "localhost", self.port):
             await asyncio.Future()
 
     async def receive(self, required_keys: set, correlate_id=None):
