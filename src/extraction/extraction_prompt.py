@@ -73,3 +73,7 @@ class ExtractionResponse(BaseModel):
     user_request: Optional[str] = Field(
         description="A summary of user's query along with responses to any clarification questions provided in the [User Request] section"
     )
+
+    webpage_state: Optional[str] = Field(
+        description="A summary of the key information on the current webpage, including web page category, restaurant name, booking date, booking time, party size, list of restaurants (if applicable), list of available time slots (if applicable)"
+    )
