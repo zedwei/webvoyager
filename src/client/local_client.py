@@ -5,6 +5,8 @@ import globals
 import platform
 import time
 from colorama import Fore
+from PIL import Image
+from io import BytesIO
 
 
 class LocalClient(Client):
@@ -92,7 +94,14 @@ class LocalClient(Client):
         return user_input
 
     async def screenshot(self):
-        return await self.context.pages[-1].screenshot()
+        image_byte = await self.context.pages[-1].screenshot()
+        image = Image.open(BytesIO(image_byte))
+        new_size = (int(image.width * 0.5), int(image.height * 0.5))
+        resized_image = image.resize(new_size)
+        output = BytesIO()
+        resized_image.save(output, format=image.format)
+        scaled_byte_data = output.getvalue()
+        return scaled_byte_data
 
     async def url(self):
         return self.context.pages[-1].url

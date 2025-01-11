@@ -1,14 +1,13 @@
 import globals
-from interfaces import AgentState
+from interfaces import AgentState, ReasoningResponse
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
-from reasoning.reasoning_prompt import ReasoningResponse
 from execution.execution_prompt import ExecutionResponse, execution_prompt
 from mark_page import annotate
 from utils import print_debug
 
 
-def pre_process(state: AgentState):
+async def pre_process(state: AgentState):
     reasoning: ReasoningResponse = state["reasoning"]
 
     labels = []
@@ -26,7 +25,7 @@ def pre_process(state: AgentState):
         + "\n".join(labels)
     )
     browser = state["browser"]
-    url = browser.url()
+    url = await browser.url()
 
     return {
         **state,

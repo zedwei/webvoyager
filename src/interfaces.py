@@ -3,8 +3,11 @@ from typing_extensions import TypedDict
 from typing import List, Optional
 from langchain_core.messages import BaseMessage
 from extraction.extraction_prompt import ExtractionResponse
-from reasoning.reasoning_prompt import ReasoningResponse
+
+# from reasoning.reasoning_prompt import ReasoningResponse
 from execution.execution_prompt import ExecutionResponse
+
+from pydantic import BaseModel, Field
 
 
 class BBox(TypedDict):
@@ -21,6 +24,16 @@ class Prediction(TypedDict):
     thought: str
 
 
+# Output Pydantic
+class ReasoningResponse(BaseModel):
+    thought: str = Field(
+        description="A brief reasoning explaining why this action was chosen."
+    )
+    action: str = Field(
+        description="A concrete description of the action to take. Please only include a single immediate next action to take. E.g. Update the party size selector on web page to 3."
+    )
+
+
 # This represents the state of the agent
 # as it proceeds through execution
 class AgentState(TypedDict):
@@ -30,9 +43,8 @@ class AgentState(TypedDict):
     bboxes: List[BBox]  # The bounding boxes from the browser annotation function
     extraction: ExtractionResponse
     reasoning: ReasoningResponse
-    execution: dict
+    execution: ExecutionResponse
     scratchpad: List[BaseMessage]
     observation: str  # The most recent response from a tool
     date_today: str
-    user_request: str # A summary of user's requests so far
-    
+    user_request: str  # A summary of user's requests so far

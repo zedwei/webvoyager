@@ -1,14 +1,18 @@
 import globals
-from interfaces import AgentState
+from interfaces import AgentState, ReasoningResponse
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
 from extraction.extraction_prompt import ExtractionResponse
-from reasoning.reasoning_prompt import reasoning_prompt, ReasoningResponse
+from reasoning.reasoning_prompt import prompt
 from utils import print_debug
+from mark_page import screenshot
 
 
-def pre_process(state: AgentState):
+async def pre_process(state: AgentState):
     extraction: ExtractionResponse = state["extraction"]
+    browser = state["browser"]
+    url = await browser.url()
+    state = await screenshot(state)
 
     return {
         **state,
@@ -24,6 +28,7 @@ def pre_process(state: AgentState):
         "list_name": extraction.list_name,
         "list_time": extraction.list_time,
         "user_request": extraction.user_request,
+        "current_url": url,
     }
 
 
@@ -37,5 +42,5 @@ def reasoning_agent():
     llm = llm.with_structured_output(ReasoningResponse).with_retry(stop_after_attempt=3)
 
     return pre_process | RunnablePassthrough.assign(
-        reasoning=reasoning_prompt | llm | post_process
+        reasoning=prompt | llm | post_process
     )

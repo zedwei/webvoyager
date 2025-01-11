@@ -2,7 +2,7 @@ from interfaces import AgentState
 from colorama import Fore
 from langchain_core.messages import HumanMessage
 from extraction.extraction_prompt import ExtractionResponse
-from reasoning.reasoning_prompt import ReasoningResponse
+from interfaces import ReasoningResponse
 from execution.execution_prompt import ExecutionResponse
 import globals
 import uuid
@@ -38,6 +38,7 @@ def print_debug(stage, response):
         print_key_value("List of avail time(webpage)", extraction.list_time)
 
         print_key_value("Summary of user input", extraction.user_request)
+        print_key_value("Summary of webpage state", extraction.webpage_state)
         print_key_value("LLM thoughts", extraction.thought)
 
     elif stage == "Reasoning":
