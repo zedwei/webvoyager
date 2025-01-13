@@ -98,7 +98,7 @@ class WebSocketClient(Client):
         
         try:
             response_obj = json.loads(response["content"])
-            return response_obj
+            return response_obj[0]
         except:
             return None
 
