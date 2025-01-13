@@ -46,7 +46,7 @@ class WebSocketClient(Client):
         while True:
             try:
                 data_str = await self.websocket.recv()
-                print(f"{Fore.MAGENTA}Received: {data_str}")
+                # print(f"{Fore.MAGENTA}Received: {data_str}")
                 data = json.loads(data_str)
                 if not required_keys.issubset(data.keys()):
                     print(
@@ -95,7 +95,7 @@ class WebSocketClient(Client):
         if response["status"] != "succeeded":
             print(Fore.RED + "Error in executing JavaScript.")
             return None
-        
+
         try:
             response_obj = json.loads(response["content"])
             return response_obj[0]
@@ -125,20 +125,56 @@ class WebSocketClient(Client):
         return url
 
     async def click(self, x, y):
-        await self.run_js(
-            "document.elementFromPoint("
-            + str(x)
-            + ","
-            + str(y)
-            + ').dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true, clientX: '
-            + str(x)
-            + ", clientY: "
-            + str(y)
-            + ", view: window}))"
+        # await self.run_js(
+        #     "document.elementFromPoint("
+        #     + str(x)
+        #     + ","
+        #     + str(y)
+        #     + ').dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true, clientX: '
+        #     + str(x)
+        #     + ", clientY: "
+        #     + str(y)
+        #     + ", view: window}))"
+        # )
+
+        # New implementation
+        id = gen_id()
+        await self.send(
+            {
+                "id": id,
+                "action": "page.mouse.click",
+                "content": "{'x': " + str(x) + ", 'y': " + str(y) + "}",
+            }
         )
+        await self.receive(required_keys=set(), correlate_id=id)
 
     async def type(self, x, y, text):
-        await self.run_js(f'document.elementFromPoint({x}, {y}).value="{text}"')
+        # await self.run_js(f'document.elementFromPoint({x}, {y}).value="{text}"')
+
+        # New implementation
+        # Step 1: Click & set focus on the input box
+        await self.click(x, y)
+        time.sleep(1)
+
+        # Step 2: Clear existing text
+        select_all = "Meta+A" if platform.system() == "Darwin" else "Control+A"
+        await self.keypress(select_all)
+        await self.keypress("Backspace")
+
+        # Step 3: Input new text
+        id = gen_id()
+        await self.send(
+            {
+                "id": id,
+                "action": "page.keyboard.type",
+                "content": text,
+            }
+        )
+        await self.receive(required_keys=set(), correlate_id=id)
+        time.sleep(2)
+
+        # Step 4: Press Enter
+        await self.keypress("Enter")
 
     async def scroll(self, offset):
         await self.run_js(f"window.scrollBy(0, {offset})")
@@ -167,5 +203,12 @@ class WebSocketClient(Client):
         return response["content"]
 
     async def keypress(self, key):
-        # TODO: explore how to implement keypress
-        pass
+        id = gen_id()
+        await self.send(
+            {
+                "id": id,
+                "action": "page.keyboard.press",
+                "content": key,
+            }
+        )
+        await self.receive(required_keys=set(), correlate_id=id)
