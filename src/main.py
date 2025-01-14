@@ -7,6 +7,7 @@ from colorama import init as initColorma, Fore
 from client.local_client import LocalClient
 from client.websocket_client import WebSocketClient
 import traceback
+from utils import log_message
 
 
 def _getpass(env_var: str):
@@ -33,10 +34,10 @@ async def handle_client(websocket):
         client = WebSocketClient()
         await client.run_server(websocket)
     except Exception:
-        print(Fore.RED + "Error in handling client")
+        log_message("Error in handling client", Fore.RED)
         traceback.print_exc()
     finally:
-        print(Fore.RED + "Client disconnected")
+        log_message("Client disconnected", Fore.RED)
         connected_clients.remove(websocket)
 
 
@@ -48,7 +49,7 @@ async def main():
     else:
         client = LocalClient()
 
-    print(Fore.YELLOW + "Initiating browser and starting agent...")
+    log_message("Initiating browser and starting agent...", Fore.YELLOW)
     init()
 
     await client.run()
