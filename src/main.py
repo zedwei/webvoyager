@@ -21,6 +21,7 @@ def init():
     _getpass("OPENAI_API_KEY")
 
     os.system("cls")
+    print(Fore.YELLOW + "Initiating browser and starting agent...")
 
 
 async def main():
@@ -29,7 +30,6 @@ async def main():
     else:
         client = LocalClient()
 
-    print(Fore.YELLOW + "Initiating browser and starting agent...")
     init()
 
     await client.run()
