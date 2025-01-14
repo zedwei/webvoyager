@@ -109,3 +109,6 @@ class LocalClient(Client):
     async def keypress(self, key):
         await self.context.pages[-1].keyboard.press(key)
         time.sleep(0.2)
+
+    async def inner_dialog(self, thoughts, action):
+        return await super().inner_dialog(thoughts, action)

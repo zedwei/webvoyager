@@ -9,6 +9,9 @@ from utils import print_debug
 
 async def pre_process(state: AgentState):
     reasoning: ReasoningResponse = state["reasoning"]
+    # Send thoughts and action from reasoning output as inner dialog to client for display
+    browser = state["browser"]
+    await browser.inner_dialog(reasoning.thought, reasoning.action)
 
     labels = []
     for i, bbox in enumerate(state["bboxes"]):
@@ -24,9 +27,9 @@ async def pre_process(state: AgentState):
         + "\n Data: \n"
         + "\n".join(labels)
     )
-    browser = state["browser"]
-    url = await browser.url()
 
+    url = await browser.url()
+    
     return {
         **state,
         "bbox_descriptions": bbox_descriptions,

@@ -212,3 +212,11 @@ class WebSocketClient(Client):
             }
         )
         await self.receive(required_keys=set(), correlate_id=id)
+
+    async def inner_dialog(self, thought, action):
+        id = gen_id()
+        data = {"thought": thought, "action": action}
+        await self.send(
+            {"id": id, "action": "inner_dialog", "content": json.dumps(data)}
+        )
+        await self.receive(required_keys=set(), correlate_id=id)
