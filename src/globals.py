@@ -22,3 +22,5 @@ GLOBAL_PROMPT_TEMPLATE = SystemMessagePromptTemplate(
         ),
     ],
 )
+
+USE_HALF_RESOLUTION_SCREENSHOT = True
