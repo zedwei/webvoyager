@@ -12,9 +12,12 @@ from utils import gen_id
 
 
 class WebSocketClient(Client):
-    def __init__(self, port):
+    def __init__(self):
         self.mode = ClientMode.WEBSOCKET
-        self.port = port
+
+    # def __init__(self, port):
+    #     self.mode = ClientMode.WEBSOCKET
+    #     self.port = port
 
     async def run_server(self, websocket):
         print(Fore.GREEN + "New client connected")
