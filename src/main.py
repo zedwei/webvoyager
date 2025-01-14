@@ -42,7 +42,7 @@ async def handle_client(websocket):
 
 async def main():
     if len(sys.argv) > 1:
-        async with websockets.serve(handle_client, "localhost", 8765):
+        async with websockets.serve(handle_client, "0.0.0.0", int(sys.argv[1])):
             await asyncio.Future()
         client = WebSocketClient(int(sys.argv[1]))
     else:

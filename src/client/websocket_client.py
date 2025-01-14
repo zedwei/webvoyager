@@ -62,10 +62,8 @@ class WebSocketClient(Client):
                 else:
                     return data
 
-            except:
-                # TODO: inform client to retry
+            except json.JSONDecodeError:
                 print(f"{Fore.RED}JSON Parse error: {data_str}")
-                pass
 
     async def send(self, data):
         await self.websocket.send(json.dumps(data))
