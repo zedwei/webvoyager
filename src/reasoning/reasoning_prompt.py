@@ -8,13 +8,15 @@ from globals import GLOBAL_PROMPT_TEMPLATE
 from interfaces import AgentState
 
 
-def retrieve_prompt(url: str):
-    if url and "home".casefold() in url.casefold():
+def retrieve_prompt(page_category: str):
+    if page_category and "home".casefold() in page_category.casefold():
         return PromptTemplate.from_file(f"./src/reasoning/opentable/homepage_prompt.md")
-    elif url and "search".casefold() in url.casefold():
+    elif page_category and "search".casefold() in page_category.casefold():
         return PromptTemplate.from_file(f"./src/reasoning/opentable/search_prompt.md")
-    elif url and "detail".casefold() in url.casefold():
+    elif page_category and "detail".casefold() in page_category.casefold():
         return PromptTemplate.from_file(f"./src/reasoning/opentable/detailed_prompt.md")
+    elif page_category and "booking".casefold() in page_category.casefold():
+        return PromptTemplate.from_file(f"./src/reasoning/opentable/booking_prompt.md")
     else:
         return PromptTemplate.from_file(f"./src/reasoning/reasoning_prompt_system.md")
 
