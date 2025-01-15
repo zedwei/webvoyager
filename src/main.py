@@ -43,16 +43,15 @@ async def handle_client(websocket):
 
 async def main():
     if len(sys.argv) > 1:
+        init()
+        log_message("Starting server...", Fore.YELLOW)
         async with websockets.serve(handle_client, "0.0.0.0", int(sys.argv[1])):
             await asyncio.Future()
-        client = WebSocketClient(int(sys.argv[1]))
     else:
+        init()
+        log_message("Initiating browser and starting agent...", Fore.YELLOW)
         client = LocalClient()
-
-    log_message("Initiating browser and starting agent...", Fore.YELLOW)
-    init()
-
-    await client.run()
+        await client.run()
 
 
 if __name__ == "__main__":

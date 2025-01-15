@@ -6,6 +6,7 @@ from interfaces import ReasoningResponse
 from execution.execution_prompt import ExecutionResponse
 import globals
 import uuid
+import os
 from datetime import datetime
 
 
@@ -15,6 +16,17 @@ def select_tool(state: AgentState):
     if action == "retry":
         return "execution_agent"
     return action
+
+
+def get_log_file_path():
+    return os.path.join("logs", f"log_{datetime.now().strftime('%Y-%m-%d')}.txt")
+
+
+def log_to_file(message: str):
+    log_file_path = get_log_file_path()
+    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+    with open(log_file_path, "a") as log_file:
+        log_file.write(message + "\n")
 
 
 def print_key_value(key, value):
@@ -89,4 +101,6 @@ def gen_id():
 
 
 def log_message(message: str, color: str = Fore.RESET):
-    print(color + f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {message}")
+    log_msg = f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {message}"
+    print(color + log_msg)
+    log_to_file(log_msg)

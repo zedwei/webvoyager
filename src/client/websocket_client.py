@@ -8,19 +8,17 @@ import websockets
 import asyncio
 import json
 from colorama import Fore
-from utils import gen_id
+from utils import gen_id, log_message
 
 
 class WebSocketClient(Client):
     def __init__(self):
         self.mode = ClientMode.WEBSOCKET
 
-    # def __init__(self, port):
-    #     self.mode = ClientMode.WEBSOCKET
-    #     self.port = port
-
     async def run_server(self, websocket):
-        print(Fore.GREEN + "New client connected")
+        client_ip, client_port = websocket.remote_address
+
+        log_message(f"New client connected from {client_ip}:{client_port}", Fore.GREEN)
         self.websocket = websocket
 
         # Wait for user input
@@ -52,18 +50,20 @@ class WebSocketClient(Client):
                 # print(f"{Fore.MAGENTA}Received: {data_str}")
                 data = json.loads(data_str)
                 if not required_keys.issubset(data.keys()):
-                    print(
-                        f"{Fore.RED}Required fields are missing. Some key in {required_keys} is missing in {data}"
+                    log_message(
+                        f"Required fields are missing. Some key in {required_keys} is missing in {data}",
+                        Fore.RED,
                     )
                 elif correlate_id and data["correlate_id"] != correlate_id:
-                    print(
-                        f"{Fore.RED}Coorelate Id doesn't match request Id. Expect: {correlate_id}, Received: {data["correlate_id"]}"
+                    log_message(
+                        f"Coorelate Id doesn't match request Id. Expect: {correlate_id}, Received: {data["correlate_id"]}",
+                        Fore.RED,
                     )
                 else:
                     return data
 
             except json.JSONDecodeError:
-                print(f"{Fore.RED}JSON Parse error: {data_str}")
+                log_message(f"JSON Parse error: {data_str}", Fore.RED)
 
     async def send(self, data):
         await self.websocket.send(json.dumps(data))
@@ -94,7 +94,7 @@ class WebSocketClient(Client):
             required_keys={"content", "status"}, correlate_id=id
         )
         if response["status"] != "succeeded":
-            print(Fore.RED + "Error in executing JavaScript.")
+            log_message(f"Error in executing JavaScript.", Fore.RED)
             return None
 
         try:
@@ -187,7 +187,6 @@ class WebSocketClient(Client):
         await self.navigate("https://www.bing.com")
 
     async def user_clarify(self, question):
-        print(Fore.YELLOW + f"Question: {question}" + Fore.GREEN)
         id = gen_id()
         await self.send(
             {
@@ -199,7 +198,6 @@ class WebSocketClient(Client):
         )
 
         response = await self.receive(required_keys={"content"}, correlate_id=id)
-        print(Fore.GREEN + f"User's answer: {response["content"]}")
 
         return response["content"]
 
