@@ -74,7 +74,7 @@ def print_debug(stage, response):
         print(f"{Fore.WHITE}{response.model_dump_json()}")
 
 
-def update_scratchpad(state: AgentState):
+async def update_scratchpad(state: AgentState):
     scratchpad = state.get("scratchpad")
     if scratchpad:
         txt = scratchpad[0].content
@@ -91,6 +91,10 @@ def update_scratchpad(state: AgentState):
             answer = ask_args[-1]
             txt = txt + f"\nClarification question: {question}\n"
             txt = txt + f"Answer: {answer}\n"
+
+    browser = state["browser"]
+    execution: ExecutionResponse = state["execution"]
+    await browser.inner_dialog(execution.thought, execution.action)
 
     return {**state, "scratchpad": [HumanMessage(content=txt)]}
 

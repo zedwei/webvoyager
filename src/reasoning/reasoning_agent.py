@@ -14,6 +14,8 @@ async def pre_process(state: AgentState):
     url = await browser.url()
     state = await screenshot(state)
 
+    await browser.inner_dialog(extraction.thought, extraction.action)
+
     return {
         **state,
         "request_name": extraction.request_name,

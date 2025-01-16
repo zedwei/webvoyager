@@ -144,7 +144,7 @@ class WebSocketClient(Client):
             {
                 "id": id,
                 "action": "page.mouse.click",
-                "content": "{'x': " + str(x) + ", 'y': " + str(y) + "}",
+                "content": "{\"x\": " + str(x) + ", \"y\": " + str(y) + "}",
             }
         )
         await self.receive(required_keys=set(), correlate_id=id)
