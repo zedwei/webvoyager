@@ -94,7 +94,12 @@ async def update_scratchpad(state: AgentState):
 
     browser = state["browser"]
     execution: ExecutionResponse = state["execution"]
-    await browser.inner_dialog(execution.thought, execution.action)
+
+    if execution:
+        if execution.user_request and execution.thought:
+            await browser.inner_dialog(execution.thought, execution.user_request)
+        if execution.action and execution.thought:
+            await browser.inner_dialog(execution.thought, execution.action)
 
     return {**state, "scratchpad": [HumanMessage(content=txt)]}
 
