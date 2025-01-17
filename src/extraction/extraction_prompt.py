@@ -75,5 +75,8 @@ class ExtractionResponse(BaseModel):
     )
 
     webpage_state: Optional[str] = Field(
-        description="A summary of the key information on the current webpage, including web page category, restaurant name, booking date, booking time, party size, list of restaurants (if applicable), list of available time slots (if applicable)"
+        description="""A summary of the key information on the current webpage, 
+                    including web page category, restaurant name, booking date, booking time, party size, 
+                    list of restaurants (if applicable), list of available time slots (if applicable).
+                    Include the main components on the current webpage as well."""
     )
