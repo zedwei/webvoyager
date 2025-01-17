@@ -38,7 +38,7 @@ class ReasoningResponse(BaseModel):
 # as it proceeds through execution
 class AgentState(TypedDict):
     browser: BrowserContext  # The Playwright browser that includes all opened pages
-    input: str  # User request
+    input: str  # Raw user request
     img: str  # b64 encoded screenshot
     bboxes: List[BBox]  # The bounding boxes from the browser annotation function
     extraction: ExtractionResponse
@@ -47,4 +47,4 @@ class AgentState(TypedDict):
     scratchpad: List[BaseMessage]
     observation: str  # The most recent response from a tool
     date_today: str
-    user_request: str  # A summary of user's requests so far
+    user_request: str  # A summary of user's requests after all the turns so far
