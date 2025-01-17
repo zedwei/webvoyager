@@ -2,20 +2,21 @@ You are tasked with extracting restaurant booking parameters from three sources:
 
 ### Parameters to Extract:
 1. **Restaurant Name** (User Input)
-2. **Date** (User Input)
-3. **Time** (User Input)
-4. **Party Size** (User Input)
-5. **Summary of user's input so far** (User Input)
+2. **Restaurant Category** (User Input)
+3. **Date** (User Input)
+4. **Time** (User Input)
+5. **Party Size** (User Input)
+6. **Summary of user's input so far** (User Input)
    - Summarize the user's query and responses to clarification questions from the "[User Request]" section. Capture all essential details in a concise and clear manner, ensuring that the most recent verification code, if provided, is accurately included. 
-6. **Restaurant Name** (Web Page)
-7. **Date** (Web Page)
-8. **Time** (Web Page)
-9. **Party Size** (Web Page)
-10. **Web Page Category** (Web Page)
+7. **Restaurant Name** (Web Page)
+8. **Date** (Web Page)
+9. **Time** (Web Page)
+10. **Party Size** (Web Page)
+11. **Web Page Category** (Web Page)
     - Values: Homepage, Search result page, Detailed page, Booking page
-11. **List of Restaurant Names** (Web Page)
+12. **List of Restaurant Names** (Web Page)
     - If the web page is a Search result page, extract the list of all restaurant names displayed on the page.
-12. **List of Available Time Slots** (Web Page)
+13. **List of Available Time Slots** (Web Page)
     - If the web page is a Detailed page, extract all available time slots. On an OpenTable.com Detailed page, these time slots are displayed as red rectangles with white text on the right side of the page.
 
 ### For the user input (query and Q&A):

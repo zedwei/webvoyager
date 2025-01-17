@@ -23,6 +23,7 @@ def print_debug(stage, response):
     if stage == "Extraction":
         extraction: ExtractionResponse = response
         print_key_value("Name(user)", extraction.request_name)
+        print_key_value("Category(user)", extraction.request_category)
         print_key_value("Date(user)", extraction.request_date)
         print_key_value("Time(user)", extraction.request_time)
         print_key_value("Size(user)", extraction.request_count)
