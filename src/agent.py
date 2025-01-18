@@ -21,16 +21,16 @@ class Agent:
 
         graph_builder = StateGraph(AgentState)
 
-        graph_builder.add_node("extraction_agent", self.extraction_agent)
-        graph_builder.add_node("reasoning_agent", self.reasoning_agent)
-        graph_builder.add_node("execution_agent", self.execution_agent)
+        graph_builder.add_node("extraction_agent", self.extraction_agent) # Observe the environment, e.g., query parsing
+        graph_builder.add_node("reasoning_agent", self.reasoning_agent) # Reason to generate the action thought
+        graph_builder.add_node("execution_agent", self.execution_agent) # Select an action to execute
         graph_builder.add_node("update_scratchpad", update_scratchpad)
 
         graph_builder.add_edge(START, "extraction_agent")
         graph_builder.add_edge("extraction_agent", "reasoning_agent")
         graph_builder.add_edge("reasoning_agent", "execution_agent")
 
-        graph_builder.add_conditional_edges("execution_agent", select_tool)
+        graph_builder.add_conditional_edges("execution_agent", select_tool) # Take action, decided at the runtime
 
         tools = {
             "Click": click,
@@ -46,6 +46,7 @@ class Agent:
             "Select": select,
         }
 
+        # Question: Do we really need to add all the nodes or just the node corresponds to select_tool? 
         for node_name, tool in tools.items():
             graph_builder.add_node(
                 node_name,

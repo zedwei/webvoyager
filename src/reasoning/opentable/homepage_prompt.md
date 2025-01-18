@@ -2,8 +2,9 @@
 
 **Context:** You are currently on the homepage of opentable.com. Decide the next action based on the following guidelines:
 
-1. If the restaurant name is not provided in the user request, prompt the user to provide it.
-2. If the restaurant name is provided, search for the restaurant name in the search box located in the top-right corner and navigate to the search result page.
+1. If the restaurant name is not provided in the user request but the restaurant category is provided in the user request, clarify with the user if they want to provide the restaurant name or search the restaurant using the category on opentable.com homepage.
+2. If the restaurant name and category are not provided in the user request, prompt the user to provide it.
+3. If the restaurant name is provided, search for the restaurant name in the search box located in the top-right corner and navigate to the search result page.
 
 **Example Scenarios:**
 

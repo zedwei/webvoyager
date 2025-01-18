@@ -27,7 +27,12 @@ def post_process(response: ExtractionResponse):
     print_debug("Extraction", response)
     return response
 
-
+"""
+The pipeline output of the extraction_agent is the following dictionary:
+{**AgentState,
+ extraction: response which is which is a dictionary of the extraction results of the type ExtractionResponse
+}
+"""
 def extraction_agent():
     llm = ChatOpenAI(model=globals.OPENAI_EXTRACTION_MODEL, max_tokens=16384)
     llm = llm.with_structured_output(ExtractionResponse).with_retry(

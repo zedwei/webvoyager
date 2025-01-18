@@ -39,6 +39,12 @@ def post_process(response: ReasoningResponse):
     return response
 
 
+"""
+The pipeline output of the extraction_agent is the following dictionary:
+{**AgentState,
+ reasonging: response which is which is a dictionary of the extraction results of the type ReasoningResponse
+}
+"""
 def reasoning_agent():
     llm = ChatOpenAI(model=globals.OPENAI_REASONING_MODEL, max_tokens=16384)
     llm = llm.with_structured_output(ReasoningResponse).with_retry(stop_after_attempt=3)
