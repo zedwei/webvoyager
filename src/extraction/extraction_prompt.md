@@ -7,7 +7,7 @@ You are tasked with extracting restaurant booking parameters from three sources:
 4. **Time** (User Input)
 5. **Party Size** (User Input)
 6. **Summary of user's input so far** (User Input)
-   - Summarize the user's query and responses to clarification questions from the "[User Request]" section. Capture all essential details in a concise and clear manner, ensuring that the most recent verification code, if provided, is accurately included. 
+   - Summarize the user's query and responses to clarification questions from the "[User Request]" section. Capture all essential details in a concise and clear manner, summarize what are specified and what are missing in terms of restaurant name, restaurant category, date, time, and party size, ensuring that the most recent verification code, if provided, is accurately included. 
 7. **Restaurant Name** (Web Page)
 8. **Date** (Web Page)
 9. **Time** (Web Page)

@@ -14,9 +14,11 @@ async def pre_process(state: AgentState):
     url = await browser.url()
     state = await screenshot(state)
 
+    # Question: Not sure if we need to duplicate the extraction result in the following dict because they are already in the state
     return {
         **state,
         "request_name": extraction.request_name,
+        "request_category": extraction.request_category,
         "request_date": extraction.request_date,
         "request_time": extraction.request_time,
         "request_count": extraction.request_count,
