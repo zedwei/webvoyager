@@ -10,9 +10,9 @@ from typing import List
 
 
 def gen_trajectory_str(trajectory: List[ReasoningTrajectory]) -> str:
-    return "\n".join(
+    return "\n\n".join(
         [
-            f"State: {item['state']}\nAction: {item['action'] or ''}"
+            f"Webpage: {item['state']}\n{("Action: " + item['action']) if item['action'] else ''}"
             for item in trajectory
         ]
     )
@@ -30,7 +30,7 @@ async def pre_process(state: AgentState):
     # Append extracted state to the reasoning trajectory
     if not state.get("reasoning_trajectory"):
         state["reasoning_trajectory"] = []
-    state["reasoning_trajectory"].append({"state": extraction.thought, "action": None})
+    state["reasoning_trajectory"].append({"state": extraction.webpage_state, "action": None})
 
     return {
         **state,
