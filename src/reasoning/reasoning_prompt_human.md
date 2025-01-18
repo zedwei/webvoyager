@@ -3,6 +3,7 @@
 
 **Parameters to Reason About:**
 - **Name of Restaurant**: User requested: {request_name}, Current webpage: {status_name}
+- **Category of Restaurant**: User requested: {request_category}
 - **Date**: User requested: {request_date}, Value of date selector on current webpage: {status_date}
 - **Time**: User requested: {request_time}, Value of time selector on current webpage: {status_time}
 - **Party Size**: User requested: {request_count}, Value of party size selector on current webpage: {status_count}

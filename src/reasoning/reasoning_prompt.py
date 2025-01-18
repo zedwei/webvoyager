@@ -49,6 +49,7 @@ def prompt(state: AgentState):
                         f"./src/reasoning/reasoning_prompt_human.md",
                         input_variables=[
                             "request_name",
+                            "request_category"
                             "request_date",
                             "request_time",
                             "request_count",
