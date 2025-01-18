@@ -67,6 +67,7 @@ def prompt(state: AgentState):
         ],
         input_variables=[
             "request_name",
+            "request_category"
             "request_date",
             "request_time",
             "request_count",
