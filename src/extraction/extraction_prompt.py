@@ -51,6 +51,7 @@ class ExtractionResponse(BaseModel):
     )
     request_name: Optional[str] = Field(description="Restaurant Name from user input")
     request_category: Optional[str] = Field(description="Restaurant Category from user input")
+    request_category_search: Optional[str] = Field(description="Whether user wants to perform restaurant category search on opentable")
     request_date: Optional[date] = Field(description="Date from user input")
     request_time: Optional[time] = Field(description="Time from user input")
     request_count: Optional[int] = Field(description="Party size from user input")

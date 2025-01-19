@@ -3,20 +3,22 @@ You are tasked with extracting restaurant booking parameters from three sources:
 ### Parameters to Extract:
 1. **Restaurant Name** (User Input)
 2. **Restaurant Category** (User Input)
-3. **Date** (User Input)
-4. **Time** (User Input)
-5. **Party Size** (User Input)
-6. **Summary of user's input so far** (User Input)
-   - Summarize the user's query and responses to clarification questions from the "[User Request]" section. Capture all essential details in a concise and clear manner, summarize what are specified and what are missing in terms of restaurant name, restaurant category, date, time, and party size, ensuring that the most recent verification code, if provided, is accurately included. 
-7. **Restaurant Name** (Web Page)
-8. **Date** (Web Page)
-9. **Time** (Web Page)
-10. **Party Size** (Web Page)
-11. **Web Page Category** (Web Page)
+3. **Restaurant Category Search**(User Input)
+4. **Date** (User Input)
+5. **Time** (User Input)
+6. **Party Size** (User Input)
+7. **Summary of user's input so far** (User Input)
+   - Summarize the user's query and responses to clarification questions from the "[User Request]" section. Capture all essential details in a concise and clear manner, summarize what are specified and what are missing in terms of restaurant name, restaurant category, date, time, and party size, ensuring that the most recent verification code, if provided, is accurately included.
+   - Check whether user has **explicitly** expressed the intent in the "[User Request]" section to perfom the category search on opentable.com and store the result in **Restaurant Category Search** in terms of 'True' or 'False'. Flag it as 'None' if it's not sure. Do not assume or halluciation the intent.
+8. **Restaurant Name** (Web Page)
+9. **Date** (Web Page)
+10. **Time** (Web Page)
+11. **Party Size** (Web Page)
+12. **Web Page Category** (Web Page)
     - Values: Homepage, Search result page, Detailed page, Booking page
-12. **List of Restaurant Names** (Web Page)
+13. **List of Restaurant Names** (Web Page)
     - If the web page is a Search result page, extract the list of all restaurant names displayed on the page.
-13. **List of Available Time Slots** (Web Page)
+14. **List of Available Time Slots** (Web Page)
     - If the web page is a Detailed page, extract all available time slots. On an OpenTable.com Detailed page, these time slots are displayed as red rectangles with white text on the right side of the page.
 
 ### For the user input (query and Q&A):

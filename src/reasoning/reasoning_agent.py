@@ -19,6 +19,7 @@ async def pre_process(state: AgentState):
         **state,
         "request_name": extraction.request_name,
         "request_category": extraction.request_category,
+        "request_category_search": extraction.request_category_search,
         "request_date": extraction.request_date,
         "request_time": extraction.request_time,
         "request_count": extraction.request_count,
