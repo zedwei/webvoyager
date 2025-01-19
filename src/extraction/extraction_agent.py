@@ -30,7 +30,7 @@ def post_process(response: ExtractionResponse):
 """
 The pipeline output of the extraction_agent is the following dictionary:
 {**AgentState,
- extraction: response which is which is a dictionary of the extraction results of the type ExtractionResponse
+ "extraction": response which is a dictionary of the extraction results of the type ExtractionResponse
 }
 """
 def extraction_agent():

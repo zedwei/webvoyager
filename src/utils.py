@@ -59,7 +59,13 @@ def print_debug(stage, response):
     else:
         print(f"{Fore.WHITE}{response.model_dump_json()}")
 
-
+"""
+The scratchpad collects the multi-turn conversation with the user in this implementation
+The "pipeline result" (though it's not exactly using the pipeline mechansim) is:
+{**AgentState,
+ "scratchpad": scratchpad content stored in the HumanMessage format
+}
+"""
 def update_scratchpad(state: AgentState):
     scratchpad = state.get("scratchpad")
     if scratchpad:

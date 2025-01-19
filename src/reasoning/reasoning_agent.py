@@ -42,7 +42,7 @@ def post_process(response: ReasoningResponse):
 """
 The pipeline output of the extraction_agent is the following dictionary:
 {**AgentState,
- reasonging: response which is which is a dictionary of the extraction results of the type ReasoningResponse
+ "reasonging": response which is a dictionary of the extraction results of the type ReasoningResponse
 }
 """
 def reasoning_agent():

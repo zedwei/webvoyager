@@ -46,13 +46,19 @@ class Agent:
             "Select": select,
         }
 
-        # Question: Do we really need to add all the nodes or just the node corresponds to select_tool? 
+        """
+        The pipeline output of the extraction_agent is the following dictionary:
+        {
+        "observation": tool execution result
+        }
+        """
         for node_name, tool in tools.items():
             graph_builder.add_node(
                 node_name,
                 RunnableLambda(tool)
                 | (lambda observation: {"observation": observation}),
             )
+            # Question: How/where is "observation" used?
             graph_builder.add_edge(node_name, "update_scratchpad")
 
         graph_builder.add_edge("update_scratchpad", "extraction_agent")

@@ -56,6 +56,12 @@ def post_process(response: ExecutionResponse) -> dict:
     return {"action": action, "args": action_input, "thought": response.thought}
 
 
+"""
+The pipeline output of the extraction_agent is the following dictionary:
+{**AgentState,
+ "execution": response which is a dictionary of the action selection result for execution, of the type ExecutionResponse
+}
+"""
 def execution_agent():
     llm = ChatOpenAI(model=globals.OPENAI_EXECUTION_MODEL, max_tokens=16384)
     llm = llm.with_structured_output(ExecutionResponse).with_retry(stop_after_attempt=3)
