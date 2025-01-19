@@ -53,12 +53,15 @@ class Agent:
         }
         """
         for node_name, tool in tools.items():
-            graph_builder.add_node(
-                node_name,
-                RunnableLambda(tool)
-                | (lambda observation: {"observation": observation}),
-            )
-            # Question: How/where is "observation" used?
+            #graph_builder.add_node(
+            #    node_name,
+            #    RunnableLambda(tool)
+            #    | (lambda observation: {"observation": observation}),
+            #)
+
+            graph_builder.add_node(node_name, RunnableLambda(tool) | update_observation)
+            
+            # Question: How is "observation" added to the AgentState?
             graph_builder.add_edge(node_name, "update_scratchpad")
 
         graph_builder.add_edge("update_scratchpad", "extraction_agent")

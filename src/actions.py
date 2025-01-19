@@ -157,3 +157,6 @@ async def select(state: AgentState):
         return f"Failed to select the target item in the dropdown list. Try clicking the target instead."
     else:
         return f"Selected the target item in the dropdown list."
+    
+def update_observation(observation):
+    return {"observation": observation}
