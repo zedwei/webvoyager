@@ -8,13 +8,15 @@ from globals import GLOBAL_PROMPT_TEMPLATE
 from interfaces import AgentState
 
 
-def retrieve_prompt(url: str):
-    if url and "home".casefold() in url.casefold():
+def retrieve_prompt(page_category: str):
+    if page_category and "home".casefold() in page_category.casefold():
         return PromptTemplate.from_file(f"./src/reasoning/opentable/homepage_prompt.md")
-    elif url and "search".casefold() in url.casefold():
+    elif page_category and "search".casefold() in page_category.casefold():
         return PromptTemplate.from_file(f"./src/reasoning/opentable/search_prompt.md")
-    elif url and "detail".casefold() in url.casefold():
+    elif page_category and "detail".casefold() in page_category.casefold():
         return PromptTemplate.from_file(f"./src/reasoning/opentable/detailed_prompt.md")
+    elif page_category and "booking".casefold() in page_category.casefold():
+        return PromptTemplate.from_file(f"./src/reasoning/opentable/booking_prompt.md")
     else:
         return PromptTemplate.from_file(f"./src/reasoning/reasoning_prompt_system.md")
 
@@ -31,6 +33,14 @@ def prompt(state: AgentState):
                 ],
             ),
             GLOBAL_PROMPT_TEMPLATE,
+            # System template to include reasoning trajectory
+            SystemMessagePromptTemplate(
+                prompt=[
+                    PromptTemplate.from_file(
+                        f"./src/reasoning/reasoning_trajectory.md"
+                    )
+                ]
+            ),
             HumanMessagePromptTemplate(
                 prompt=[
                     PromptTemplate.from_template("[Web Page]\n"),
@@ -46,22 +56,7 @@ def prompt(state: AgentState):
             HumanMessagePromptTemplate(
                 prompt=[
                     PromptTemplate.from_file(
-                        f"./src/reasoning/reasoning_prompt_human.md",
-                        input_variables=[
-                            "request_name",
-                            "request_category",
-                            "request_category_search",
-                            "request_date",
-                            "request_time",
-                            "request_count",
-                            "status_name",
-                            "status_date",
-                            "status_time",
-                            "status_count",
-                            "webpage_category",
-                            "list_name",
-                            "list_time",
-                        ],
+                        f"./src/reasoning/reasoning_prompt_human.md"
                     ),
                 ],
             ),
@@ -83,5 +78,6 @@ def prompt(state: AgentState):
             "current_url",
             "img",
             "current_url",
+            "reasoning_trajectory_str",
         ],
     )

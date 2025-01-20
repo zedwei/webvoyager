@@ -1,11 +1,21 @@
 import globals
-from interfaces import AgentState, ReasoningResponse
+from interfaces import AgentState, ReasoningResponse, ReasoningTrajectory
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
 from extraction.extraction_prompt import ExtractionResponse
 from reasoning.reasoning_prompt import prompt
 from utils import print_debug
 from mark_page import screenshot
+from typing import List
+
+
+def gen_trajectory_str(trajectory: List[ReasoningTrajectory]) -> str:
+    return "\n\n".join(
+        [
+            f"Webpage: {item['state']}\n{("Action: " + item['action']) if item['action'] else ''}"
+            for item in trajectory
+        ]
+    )
 
 
 async def pre_process(state: AgentState):
@@ -14,7 +24,22 @@ async def pre_process(state: AgentState):
     url = await browser.url()
     state = await screenshot(state)
 
-    # Question: Not sure if we need to duplicate the extraction result in the following dict because they are already in the state
+    # Send thoughts and action from extraction output as inner dialog to client for display
+    await browser.inner_dialog(extraction.thought, extraction.user_request)
+
+    # Append extracted state to the reasoning trajectory
+    if not state.get("reasoning_trajectory"):
+        state["reasoning_trajectory"] = []
+    state["reasoning_trajectory"].append({"state": extraction.webpage_state, "action": None})
+
+    # Send thoughts and action from extraction output as inner dialog to client for display
+    await browser.inner_dialog(extraction.thought, extraction.user_request)
+
+    # Append extracted state to the reasoning trajectory
+    if not state.get("reasoning_trajectory"):
+        state["reasoning_trajectory"] = []
+    state["reasoning_trajectory"].append({"state": extraction.webpage_state, "action": None})
+
     return {
         **state,
         "request_name": extraction.request_name,
@@ -32,11 +57,13 @@ async def pre_process(state: AgentState):
         "list_time": extraction.list_time,
         "user_request": extraction.user_request,
         "current_url": url,
+        "reasoning_trajectory_str": gen_trajectory_str(state["reasoning_trajectory"]),
     }
 
 
 def post_process(response: ReasoningResponse):
     print_debug("Reasoning", response)
+
     return response
 
 

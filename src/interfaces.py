@@ -34,6 +34,11 @@ class ReasoningResponse(BaseModel):
     )
 
 
+class ReasoningTrajectory:
+    state: str
+    action: str
+
+
 # This represents the state of the agent
 # as it proceeds through execution
 class AgentState(TypedDict):
@@ -47,4 +52,5 @@ class AgentState(TypedDict):
     scratchpad: List[BaseMessage]
     observation: str  # The most recent response from a tool
     date_today: str
-    user_request: str  # A summary of user's requests after all the turns so far
+    user_request: str  # A summary of user's requests so far
+    reasoning_trajectory: List[ReasoningTrajectory]

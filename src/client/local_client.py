@@ -95,17 +95,23 @@ class LocalClient(Client):
 
     async def screenshot(self):
         image_byte = await self.context.pages[-1].screenshot()
-        image = Image.open(BytesIO(image_byte))
-        new_size = (int(image.width * 0.5), int(image.height * 0.5))
-        resized_image = image.resize(new_size)
-        output = BytesIO()
-        resized_image.save(output, format=image.format)
-        scaled_byte_data = output.getvalue()
-        return scaled_byte_data
+        if globals.USE_HALF_RESOLUTION_SCREENSHOT:
+            # Half resolution
+            image = Image.open(BytesIO(image_byte))
+            new_size = (int(image.width * 0.5), int(image.height * 0.5))
+            resized_image = image.resize(new_size)
+            output = BytesIO()
+            resized_image.save(output, format=image.format)
+            image_byte = output.getvalue()
+
+        return image_byte
 
     async def url(self):
         return self.context.pages[-1].url
-    
+
     async def keypress(self, key):
         await self.context.pages[-1].keyboard.press(key)
         time.sleep(0.2)
+
+    async def inner_dialog(self, thoughts, action):
+        return await super().inner_dialog(thoughts, action)

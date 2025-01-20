@@ -10,6 +10,15 @@ from utils import print_debug
 async def pre_process(state: AgentState):
     reasoning: ReasoningResponse = state["reasoning"]
 
+    # Send thoughts and action from reasoning output as inner dialog to client for display
+    browser = state["browser"]
+    await browser.inner_dialog(reasoning.thought, reasoning.action)
+
+    # Append the latest reasoning action to the reasoning trajectory
+    latest_reasoning_trajectory = state["reasoning_trajectory"][-1]
+    latest_reasoning_trajectory["action"] = reasoning.action
+
+    # Extract the bounding box descriptions
     labels = []
     for i, bbox in enumerate(state["bboxes"]):
         ariaLabel = bbox.get("ariaLabel") or ""
@@ -24,7 +33,7 @@ async def pre_process(state: AgentState):
         + "\n Data: \n"
         + "\n".join(labels)
     )
-    browser = state["browser"]
+
     url = await browser.url()
 
     return {

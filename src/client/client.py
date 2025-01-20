@@ -63,3 +63,7 @@ class Client(ABC):
     @abstractmethod
     async def keypress(self, key):
         pass
+
+    @abstractmethod
+    async def inner_dialog(self, thoughts, action):
+        pass

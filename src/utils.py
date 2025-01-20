@@ -6,6 +6,8 @@ from interfaces import ReasoningResponse
 from execution.execution_prompt import ExecutionResponse
 import globals
 import uuid
+import os
+from datetime import datetime
 
 
 def select_tool(state: AgentState):
@@ -15,8 +17,21 @@ def select_tool(state: AgentState):
         return "execution_agent"
     return action
 
+
+def get_log_file_path():
+    return os.path.join("logs", f"log_{datetime.now().strftime('%Y-%m-%d')}.txt")
+
+
+def log_to_file(message: str):
+    log_file_path = get_log_file_path()
+    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+    with open(log_file_path, "a") as log_file:
+        log_file.write(message + "\n")
+
+
 def print_key_value(key, value):
     print(f"{Fore.WHITE}{key}: {Fore.GREEN}{value}")
+
 
 def print_debug(stage, response):
     print(f"{Fore.YELLOW}{stage}")
@@ -28,12 +43,12 @@ def print_debug(stage, response):
         print_key_value("Date(user)", extraction.request_date)
         print_key_value("Time(user)", extraction.request_time)
         print_key_value("Size(user)", extraction.request_count)
-        
+
         print_key_value("Name(webpage)", extraction.status_name)
         print_key_value("Date(webpage)", extraction.status_date)
         print_key_value("Time(webpage)", extraction.status_time)
         print_key_value("Size(webpage)", extraction.status_count)
-        
+
         print_key_value("Page category(webpage)", extraction.webpage_category)
 
         print_key_value("List of names(webpage)", extraction.list_name)
@@ -55,7 +70,7 @@ def print_debug(stage, response):
         print_key_value("Content", execution.content)
         print_key_value("Select label", execution.selectLabel)
         print_key_value("LLM thoughts", execution.thought)
-        
+
         print()
     else:
         print(f"{Fore.WHITE}{response.model_dump_json()}")
@@ -67,7 +82,7 @@ The "pipeline result" (though it's not exactly using the pipeline mechansim) is:
  "scratchpad": scratchpad content stored in the HumanMessage format
 }
 """
-def update_scratchpad(state: AgentState):
+async def update_scratchpad(state: AgentState):
     scratchpad = state.get("scratchpad")
     if scratchpad:
         txt = scratchpad[0].content
@@ -85,8 +100,21 @@ def update_scratchpad(state: AgentState):
             txt = txt + f"\nClarification question: {question}\n"
             txt = txt + f"Answer: {answer}\n"
 
+    browser = state["browser"]
+    execution: ExecutionResponse = state["execution"]
+
+    if execution and execution.get("action") and execution.get("thought"):
+        await browser.inner_dialog(execution["thought"], execution["action"])
+
     return {**state, "scratchpad": [HumanMessage(content=txt)]}
+
 
 def gen_id():
     # return str(uuid.uuid4())
     return "df1e4077-59c6-4b8a-9e1f-f45b3e68f54e"  # hardcode id for testing purpose
+
+
+def log_message(message: str, color: str = Fore.RESET):
+    log_msg = f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {message}"
+    print(color + log_msg)
+    log_to_file(log_msg)
