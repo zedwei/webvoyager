@@ -36,6 +36,8 @@ class ReasoningResponse(BaseModel):
 
 class ReasoningTrajectory:
     state: str
+    action_thought: str
+    verbal_action: str
     action: str
 
 

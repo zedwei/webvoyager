@@ -42,22 +42,6 @@ async def handle_client(websocket):
         connected_clients.remove(websocket)
 
 
-connected_clients = set()
-
-
-async def handle_client(websocket):
-    connected_clients.add(websocket)
-    try:
-        client = WebSocketClient()
-        await client.run_server(websocket)
-    except Exception:
-        log_message("Error in handling client", Fore.RED)
-        traceback.print_exc()
-    finally:
-        log_message("Client disconnected", Fore.RED)
-        connected_clients.remove(websocket)
-
-
 async def main():
     if len(sys.argv) > 1:
         init()

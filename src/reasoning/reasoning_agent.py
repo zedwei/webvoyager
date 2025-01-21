@@ -12,7 +12,8 @@ from typing import List
 def gen_trajectory_str(trajectory: List[ReasoningTrajectory]) -> str:
     return "\n\n".join(
         [
-            f"Webpage: {item['state']}\n{("Action: " + item['action']) if item['action'] else ''}"
+            #f"Webpage: {item["state"]}\n{("Action: " + item["action"]) if item["action"] else ''}"
+            f"Webpage: {item["state"]}\nReasoning: {item["reasoning"]}\nVerbal action: {item["verbal_action"]}\nAction: {item["action"]}"
             for item in trajectory
         ]
     )
@@ -27,18 +28,11 @@ async def pre_process(state: AgentState):
     # Send thoughts and action from extraction output as inner dialog to client for display
     await browser.inner_dialog(extraction.thought, extraction.user_request)
 
-    # Append extracted state to the reasoning trajectory
+    # Initialize the reasoning trajectory
     if not state.get("reasoning_trajectory"):
         state["reasoning_trajectory"] = []
-    state["reasoning_trajectory"].append({"state": extraction.webpage_state, "action": None})
-
-    # Send thoughts and action from extraction output as inner dialog to client for display
-    await browser.inner_dialog(extraction.thought, extraction.user_request)
-
-    # Append extracted state to the reasoning trajectory
-    if not state.get("reasoning_trajectory"):
-        state["reasoning_trajectory"] = []
-    state["reasoning_trajectory"].append({"state": extraction.webpage_state, "action": None})
+    
+    #state["reasoning_trajectory"].append({"state": extraction.webpage_state, "action": None})
 
     return {
         **state,

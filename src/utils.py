@@ -103,8 +103,12 @@ async def update_scratchpad(state: AgentState):
     browser = state["browser"]
     execution: ExecutionResponse = state["execution"]
 
-    if execution and execution.get("action") and execution.get("thought"):
-        await browser.inner_dialog(execution["thought"], execution["action"])
+    if execution and execution.get("action"):
+        # Update the reasoning trajectory by recording the selected action
+        latest_reasoning_trajectory = state["reasoning_trajectory"][-1]
+        latest_reasoning_trajectory["action"] = execution["action"]
+        if execution.get("thought"):
+            await browser.inner_dialog(execution["thought"], execution["action"])
 
     return {**state, "scratchpad": [HumanMessage(content=txt)]}
 
