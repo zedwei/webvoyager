@@ -39,6 +39,7 @@ class ReasoningTrajectory:
     action_thought: str
     verbal_action: str
     action: str
+    action_observation: str
 
 
 # This represents the state of the agent

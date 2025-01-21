@@ -13,7 +13,7 @@ def gen_trajectory_str(trajectory: List[ReasoningTrajectory]) -> str:
     return "\n\n".join(
         [
             #f"Webpage: {item["state"]}\n{("Action: " + item["action"]) if item["action"] else ''}"
-            f"Webpage: {item["state"]}\nReasoning: {item["reasoning"]}\nVerbal action: {item["verbal_action"]}\nAction: {item["action"]}"
+            f"Webpage: {item["state"]}\nReasoning: {item["reasoning"]}\nVerbal action: {item["verbal_action"]}\nAction: {item["action"]}\nAction observation: {item["action_observation"]}"
             for item in trajectory
         ]
     )
