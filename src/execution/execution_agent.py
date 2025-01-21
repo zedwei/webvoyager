@@ -19,14 +19,6 @@ async def pre_process(state: AgentState):
     state["reasoning_trajectory"].append({"state": extraction.webpage_state, "reasoning": reasoning.thought, 
                                           "verbal_action": reasoning.action, "action": None})
 
-    # Send thoughts and action from extraction output as inner dialog to client for display
-    #await browser.inner_dialog(extraction.thought, extraction.user_request)
-
-    # Append extracted state to the reasoning trajectory
-    #if not state.get("reasoning_trajectory"):
-    #    state["reasoning_trajectory"] = []
-    #state["reasoning_trajectory"].append({"state": extraction.webpage_state, "action": None})
-
     # Append the latest reasoning action to the reasoning trajectory
     # latest_reasoning_trajectory = state["reasoning_trajectory"][-1]
     # latest_reasoning_trajectory["action"] = reasoning.action
