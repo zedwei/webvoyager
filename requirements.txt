@@ -3,7 +3,8 @@ langsmith==0.1.147
 langchain==0.3.9
 langchain-openai==0.2.11
 playwright==1.49.0
-pillow==11.0.0
 nest-asyncio==1.6.0
 websockets
 pillow
+openai
+colorama
