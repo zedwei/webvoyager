@@ -9,7 +9,7 @@ You are tasked with extracting restaurant booking parameters from three sources:
 6. **Party Size** (User Input)
 7. **Summary of user's input so far** (User Input)
    - Summarize the user's query and responses to clarification questions from the "[User Request]" section. Capture all essential details in a concise and clear manner, summarize what are specified and what are missing in terms of restaurant name, restaurant category, date, time, and party size, ensuring that the most recent verification code, if provided, is accurately included.
-   - If user has **explicitly** expressed the intent in the "[User Request]" section to perform a restaurant category search on opentable.com, set **Restaurant Category Search** to 'True'. If user has **explicitly** expressed the intent in the "[User Request]" section **not** to perform a restaurant category search on opentable.com, set ***Restaurant Search** to 'False'. Otherwise, flag it as 'None' because it's ambiguous. Do not assume or hallucinate the intent.
+   - If user has **explicitly** expressed the intent in the "[User Request]" section to perform a restaurant category search on opentable.com, set **Restaurant Category Search** to 'True'. If user has **explicitly** expressed the intent in the "[User Request]" section **not** to perform a restaurant category search on opentable.com, set **Restaurant Search** to 'False'. Otherwise, flag it as 'None' because it's ambiguous. Do not assume or hallucinate the intent.
 8. **Restaurant Name** (Web Page)
 9. **Date** (Web Page)
 10. **Time** (Web Page)
