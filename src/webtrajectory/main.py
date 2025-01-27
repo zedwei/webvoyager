@@ -2,11 +2,11 @@ from client import Client
 from interpretor import Interpreter
 import asyncio
 
-# MODE = 0 # Recording
+#MODE = 0 # Recording
 MODE = 1  # Interpreting
-FOLDER = "./data/2025-01-24_15-56-16"
+FOLDER = "./data/2025-01-24_17-07-18"
 
-TASK = "book a table for 3 people on 1/28 9pm"
+TASK = "book a table at a steakhouse restaurant for 3 people on 1/28 9pm"
 
 async def main():
     if MODE == 0:
