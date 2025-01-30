@@ -4,21 +4,24 @@ from langchain.prompts.chat import HumanMessagePromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts import PromptTemplate
 from pydantic import BaseModel, Field
-from globals import GLOBAL_PROMPT_TEMPLATE
+from globals import GLOBAL_PROMPT_TEMPLATE, ENABLE_FEW_SHOTS
 from interfaces import AgentState
 
 
 def retrieve_prompt(page_category: str):
-    if page_category and "home".casefold() in page_category.casefold():
-        return PromptTemplate.from_file(f"./src/reasoning/opentable/homepage_prompt.md")
-    elif page_category and "search".casefold() in page_category.casefold():
-        return PromptTemplate.from_file(f"./src/reasoning/opentable/search_prompt.md")
-    elif page_category and "detail".casefold() in page_category.casefold():
-        return PromptTemplate.from_file(f"./src/reasoning/opentable/detailed_prompt.md")
-    elif page_category and "booking".casefold() in page_category.casefold():
-        return PromptTemplate.from_file(f"./src/reasoning/opentable/booking_prompt.md")
+    if ENABLE_FEW_SHOTS:
+        return PromptTemplate.from_file(f"./src/reasoning/reasoning_few_shots.md")
     else:
-        return PromptTemplate.from_file(f"./src/reasoning/reasoning_prompt_system.md")
+        if page_category and "home".casefold() in page_category.casefold():
+            return PromptTemplate.from_file(f"./src/reasoning/opentable/homepage_prompt.md")
+        elif page_category and "search".casefold() in page_category.casefold():
+            return PromptTemplate.from_file(f"./src/reasoning/opentable/search_prompt.md")
+        elif page_category and "detail".casefold() in page_category.casefold():
+            return PromptTemplate.from_file(f"./src/reasoning/opentable/detailed_prompt.md")
+        elif page_category and "booking".casefold() in page_category.casefold():
+            return PromptTemplate.from_file(f"./src/reasoning/opentable/booking_prompt.md")
+        else:
+            return PromptTemplate.from_file(f"./src/reasoning/reasoning_prompt_system.md")
 
 
 # Dynamic prompt template
