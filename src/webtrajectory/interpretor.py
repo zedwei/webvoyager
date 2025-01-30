@@ -16,18 +16,17 @@ class Interpreter:
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode("utf-8")
 
-    def interpret(self, img_before, img_after, task):
+    def interpret(self, img_before, img_after, task, url):
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {
                     "role": "system",
                     "content": """You're tasked to observe a user action in web browser and describe: 
-                                1. What's the webpage status before user's action.
-                                2. What action the user took.
-                                3. What's the webpage status after user's action.
+                                1. What's the webpage status before user's action, ignoring the annotation in the screenshot. Output start with "Webpage Status:".
+                                2. What action the user took, refer to the annotation on the screenshot. Output start with "Action to take:".
 
-                                Please also try to reason about the user's intention.
+                                Please also try to reason about the user's intention, start with "Thoughts:".
                                 
                                 You're given two screenshots before and after the action. 
                                 There is annotation on the before screenshot regarding which element the user interacted with.
@@ -39,6 +38,10 @@ class Interpreter:
                         {
                             "type": "text",
                             "text": f"User's task: {task}",
+                        },
+                        {
+                            "type": "text",
+                            "text": f"Current URL: {url}",
                         },
                         {
                             "type": "text",
@@ -81,7 +84,8 @@ class Interpreter:
             img_before = self.load_based64_image(trajectory["before_annotated"])
             img_after = self.load_based64_image(trajectory["after"])
             task = trajectory["task"]
-            response = self.interpret(img_before, img_after, task)
+            url = trajectory["url"]
+            response = self.interpret(img_before, img_after, task, url)
             with open(os.path.join(self.folder, "trajectory.txt"), "a") as output_file:
                 output_file.write(f"Step {step}:\n")
                 output_file.write(response + "\n\n")
