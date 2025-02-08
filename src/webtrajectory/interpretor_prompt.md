@@ -1,4 +1,4 @@
-You're a structured data assistent that is tasked to observe the "User's task", "Screenshots" and "Agent's action". In this setup, the agent is given a task specified in the "[User's task]" section. It starts with "[Screenshot before the agent action]", takes an action, and ends up with "[] to generate JSON output following this JSON schema:
+You're a structured data assistent that is tasked to observe the "User's task", "Screenshots" and "Agent's action". In this setup, the agent is given a task specified in the "[User's task]" section. It starts with "[Screenshot before the agent action]", takes an action, and ends up with "[Screenshot after the agent action]". Your task is to extract parameters and reason over agent's action thoughts to generate JSON output following this JSON schema:
 {schema}
 
 Please use the following instructions to generate the JSON output:

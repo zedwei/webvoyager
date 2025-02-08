@@ -30,7 +30,7 @@ class Interpreter:
                 "webpage_category": {"type": "string"},
                 "user_request": {"type": "string"},
                 "webpage_state": {"type": "string"},
-                "user_action": {"type": "string"},
+                "agent_action": {"type": "string"},
                 "webpage_state_after_action": {"type": "string"}
             },        
         }
