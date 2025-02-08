@@ -77,6 +77,7 @@ def prompt(state: AgentState):
             "list_time",
             "current_url",
             "img",
+            "user_request",
             "current_url",
             "reasoning_trajectory_str",
         ],

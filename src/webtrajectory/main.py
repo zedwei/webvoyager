@@ -15,7 +15,7 @@ async def main():
         while True:
             await asyncio.sleep(1)
     elif MODE == 1:
-        interpreter = Interpreter(FOLDER)
+        interpreter = Interpreter(FOLDER, "./src/webtrajectory/interpretor_prompt.md")
         interpreter.run()
 
 
