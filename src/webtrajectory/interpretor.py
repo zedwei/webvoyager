@@ -6,39 +6,113 @@ import json
 from datetime import datetime
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-
+TASK = "book a table at a steakhouse restaurant for 3 people on 1/28 9pm"
 
 class Interpreter:
 
-    def __init__(self, folder):
+    def __init__(self, folder, prompt_file = "./src/webtrajectory/interpretor_prompt.md"):
         self.folder = folder
+        self.schema = {
+            "type": "object",
+            "properties": {
+                "user_request": {"type": "string"},
+                "request_name": {"type": "string"},
+                "request_category": {"type": "string"},
+                "request_category_search": {"type": "string"},
+                "request_date": {"type": "string"},
+                "request_time": {"type": "string"},
+                "request_count": {"type": "string"},
+                "status_name": {"type": "string"},
+                "status_date": {"type": "string"},
+                "status_time": {"type": "string"},
+                "status_count": {"type": "string"},
+                "list_name": {"type": "array"},
+                "list_time": {"type": "array"},
+                "webpage_category": {"type": "string"},
+                "webpage_state": {"type": "string"},
+                "thought": {"type": "string"},
+                "agent_action": {"type": "string"},
+                "webpage_state_after_action": {"type": "string"}
+            },        
+        }
+        self.prompt_file = prompt_file
+
+        self.html_schema = {
+            "step": {"type": "integer"}            
+        }
+        for key, details in self.schema["properties"].items():
+            self.html_schema[key] = details
+        self.html_schema["img_before"] = {"type": "string"}
+        self.html_schema["img_after"] = {"type": "string"}
 
     def load_based64_image(self, image_path):
         with open(image_path, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode("utf-8")
+        
+    def load_prompt(self):
+        """Load the prompt from the specified file."""
+        with open(self.prompt_file, "r") as file:
+            return file.read()
+        
+    def generate_empty_response(self):
+        empty_response = {}
+    
+        for key, details in self.schema["properties"].items():
+            property_type = details.get("type")
 
-    def interpret(self, img_before, img_after, task, url):
+            # Set default values based on property type
+            if property_type == "string":
+                empty_response[key] = ""
+            elif property_type == "array":
+                empty_response[key] = []
+            elif property_type == "object":
+                empty_response[key] = {}
+            elif property_type in ["integer", "number"]:
+                empty_response[key] = 0
+            elif property_type == "boolean":
+                empty_response[key] = False
+            else:
+                empty_response[key] = None  # Fallback for undefined types
+
+        return empty_response
+    
+    def check_structured_response(self, structured_response):
+         for key, details in self.schema["properties"].items():
+            property_type = details.get("type")
+
+            # Set default values based on property type
+            if property_type == "string":
+                if structured_response[key] == "":
+                    structured_response[key] = "None"
+            elif property_type == "array":
+                if structured_response[key] == None:
+                    structured_response[key] = []
+            elif property_type == "object":
+                if structured_response[key] == None:
+                    structured_response[key] = {}
+            elif property_type in ["integer", "number"]:
+                if structured_response[key] == None:
+                    structured_response[key] = 0
+            elif property_type == "boolean":
+                if structured_response[key] == None:
+                    structured_response[key] = False
+
+    def interpret(self, img_before, img_after, task, url, step):
+        prompt_template = self.load_prompt()
+        prompt = prompt_template.replace("{schema}", json.dumps(self.schema, indent=4))
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {
                     "role": "system",
-                    "content": """You're tasked to observe a user action in web browser. You're given two screenshots before and after the action with annotation of mouse position. 
-                                Please provide your response in the following JSON format:
-                                {
-                                    "webpage_status": "description of webpage status before action, ignoring mouse annotation",
-                                    "action": "description of what action user took, referring to mouse annotations",
-                                    "thoughts": "reasoning about user's intention"
-                                }
-                                
-                                You're also given the task that user is trying to achieve. Please refer to it when you reason about user's intention.""",
+                    "content": f"{prompt}",
                 },
                 {
                     "role": "user",
                     "content": [
                         {
                             "type": "text",
-                            "text": f"User's task: {task}",
+                            "text": f"[User's task]: {task}",
                         },
                         {
                             "type": "text",
@@ -46,7 +120,7 @@ class Interpreter:
                         },
                         {
                             "type": "text",
-                            "text": "Here is the screeshot before the user action.",
+                            "text": "[Here is the screeshot before the user action]:",
                         },
                         {
                             "type": "image_url",
@@ -54,7 +128,7 @@ class Interpreter:
                         },
                         {
                             "type": "text",
-                            "text": "Here is the screeshot after the user action.",
+                            "text": "[Here is the screeshot after the user action]:",
                         },
                         {
                             "type": "image_url",
@@ -62,10 +136,10 @@ class Interpreter:
                         },
                     ],
                 },
-            ],
+            ]
+            #temperature=0.2
         )
-
-        print(f"{Fore.MAGENTA}{response.model_dump_json}")
+        
         response_json = response.to_dict()
         content = response_json["choices"][0]["message"]["content"]
         
@@ -74,19 +148,17 @@ class Interpreter:
         
         try:
             structured_response = json.loads(content)
-            print(f"{Fore.YELLOW}Webpage Status: {structured_response['webpage_status']}")
-            print(f"{Fore.YELLOW}Action: {structured_response['action']}")
-            print(f"{Fore.YELLOW}Thoughts: {structured_response['thoughts']}")
+            self.check_structured_response(structured_response)
+            print(f"{Fore.WHITE}================= Interpreted LLM response for step: {step} =================")
+            for key, value in structured_response.items():
+                print(f"{Fore.GREEN}{key}: {Fore.YELLOW}{value}")
             return structured_response
         except json.JSONDecodeError:
             print(f"{Fore.RED}Failed to parse LLM response as JSON. Raw response:")
             print(f"{Fore.RED}{content}")
-            return {
-                "webpage_status": "Error parsing response",
-                "action": "Error parsing response",
-                "thoughts": "Error parsing response"
-            }
-
+            empty_structured_response = self.generate_empty_response()
+            return empty_structured_response
+ 
     def generate_html(self, steps):
         html_content = """
         <!DOCTYPE html>
@@ -120,27 +192,30 @@ class Interpreter:
         <body>
             <table>
                 <tr>
-                    <th>Step</th>
-                    <th>Webpage Status</th>
-                    <th>Action</th>
-                    <th>Thoughts</th>
-                    <th>Before Image</th>
-                    <th>After Image</th>
+        """
+        # Add the rest of the table headers dynamically based on the schema
+        for key in self.html_schema.keys():
+            html_content += f"<th>{key.replace('_', ' ').capitalize()}</th>"
+        
+        html_content += """
                 </tr>
         """
         
+        # Add the actual table rows based on the steps
         for step in steps:
             html_content += f"""
                 <tr>
-                    <td class="step-number">Step {step['step']}</td>
-                    <td>{step['webpage_status']}</td>
-                    <td>{step['action']}</td>
-                    <td>{step['thoughts']}</td>
-                    <td><img src="{step['img_before']}" alt="Before"></td>
-                    <td><img src="{step['img_after']}" alt="After"></td>
-                </tr>
+                    <td class="step-number">Step {step["step"]}</td>
             """
-        
+            for key, value in step.items():
+                if key == "img_before":
+                    html_content += f"<td><img src='{value}' alt='Before'></td>"
+                elif key == "img_after":
+                    html_content += f"<td><img src='{value}' alt='After'></td>"
+                elif key != "step":
+                    html_content += f"<td>{value}</td>"
+            html_content += "</tr>"
+
         html_content += """
             </table>
         </body>
@@ -160,6 +235,7 @@ class Interpreter:
 
         steps = []
         step = 0
+
         for i in range(len(trajectory_data) - 1):
             current = trajectory_data[i]
             next_step = trajectory_data[i + 1]
@@ -169,26 +245,22 @@ class Interpreter:
             task = current["task"]
             url = current["url"]
             
-            response = self.interpret(img_current, img_next, task, url)
-            
-            # Store step information for HTML generation
-            steps.append({
-                'step': step,
-                'webpage_status': response['webpage_status'],
-                'action': response['action'],
-                'thoughts': response['thoughts'],
-                'img_before': f"data:image/png;base64,{img_current}",
-                'img_after': f"data:image/png;base64,{img_next}"
-            })
-            
+            response = self.interpret(img_current, img_next, task, url, step)
+            html_response = {}
+            html_response["step"] = step
+            for key, value in response.items():
+                html_response[key] = value
+            html_response["img_before"] = f"data:image/png;base64,{img_current}"
+            html_response["img_after"] = f"data:image/png;base64,{img_next}"
+            steps.append(html_response)
+
             # Write to text file
-            with open(os.path.join(self.folder, "trajectory.txt"), "a") as output_file:
-                output_file.write(f"Step {step}:\n")
-                output_file.write(f"Webpage Status: {response['webpage_status']}\n")
-                output_file.write(f"Action: {response['action']}\n")
-                output_file.write(f"Thoughts: {response['thoughts']}\n\n")
+            with open(trajectory_txt_path, "a") as output_file:
+                for key, value in html_response.items():
+                    output_file.write(f"{key.replace('_', ' ').capitalize()}: {value}\n")
+                output_file.write("\n")
                 step += 1
-        
+
         # Generate and write HTML file
         html_content = self.generate_html(steps)
         with open(os.path.join(self.folder, "trajectory.html"), "w", encoding='utf-8') as html_file:
@@ -235,6 +307,7 @@ def select_data_folder():
     return os.path.join("./data", selected_folder)
 
 def main():
+    os.system("cls")
     folder = select_data_folder()
     if folder:
         interpreter = Interpreter(folder)
