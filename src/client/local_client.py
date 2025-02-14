@@ -38,7 +38,7 @@ class LocalClient(Client):
         # Wait for user input
         await self.user_query()
 
-        ### TEST
+        ### For the purpose of quickly testing the actions. Keep it for now. ###
         # await self.test_select()
 
         # Navigate to OpenTable.com as starting point
@@ -117,12 +117,18 @@ class LocalClient(Client):
         await self.context.pages[-1].keyboard.press(key)
         time.sleep(0.2)
 
+    async def inner_dialog(self, thoughts, action):
+        return await super().inner_dialog(thoughts, action)
+
+    """
+    The following code is for the purpose of testing the actions. Keep them for now.
+    """
     async def test_select(self):
         await self.navigate("https://www.opentable.com/r/wild-ginger-bellevue?corrid=61c9eade-d6c3-41d2-a29e-97510792f1ef&p=2&sd=2025-02-13T01%3A15%3A00")
         #await self.navigate("https://www.opentable.com/")
-        await self.select("Party size selector", 3)
+        await self.select_for_test("Party size selector", 3)
 
-    async def select(self, aria_label, value):
+    async def select_for_test(self, aria_label, value):
         #element = await self.context.pages[-1].evaluate("document.querySelector('select[aria-label=\"Party size selector\"]')")
         #print(f"{Fore.RED}Element found: {element}")
         #hidden = await self.context.pages[-1].evaluate(
@@ -212,6 +218,3 @@ class LocalClient(Client):
         
         # Select the option
         #await self.context.pages[-1].select_option(f"select[aria-label='{aria_label}']", f"{value}")
-
-    async def inner_dialog(self, thoughts, action):
-        return await super().inner_dialog(thoughts, action)

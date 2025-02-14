@@ -52,7 +52,7 @@ execution_prompt = ChatPromptTemplate(
 # Output Pydantic
 class ExecutionResponse(BaseModel):
     thought: str = Field(
-        description='A description of the single action you\'re taking this turn. Restrict to the following actions: "Click", "Type", "Scroll up", "Scroll down", "Go back", "Clarify", "Navigate" and "Select". E.g. Type restaurant name in the search box; Click on "complete reservation" button; Navigate to "https://www.opentable.com", etc.'
+        description='A description of the single action you\'re taking this turn. Restrict to the following actions: "Click", "Type", "ScrollUp", "ScrollDown", "GoBack", "Clarify", "Navigate" and "Select". E.g. Type restaurant name in the search box; Click on "complete reservation" button; Navigate to "https://www.opentable.com", etc.'
     )
     action: str = Field(description="One Action type you choose.")
     label: Optional[int] = Field(

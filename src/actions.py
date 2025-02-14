@@ -80,7 +80,8 @@ async def wait(state: AgentState):
 async def go_back(state: AgentState):
     browser = state["browser"]
     await browser.go_back()
-    return f"Navigated back a page to {browser.pages[-1].url}."
+    prev_url = await browser.url()
+    return f"Navigated back a page to {prev_url}."
 
 
 async def navigate(state: AgentState):
@@ -149,29 +150,16 @@ async def select(state: AgentState):
         time.sleep(2)
         
         if platform.system() == "Windows":
-
-            # x, y = bbox["x"], bbox["y"]
-            # offset = await browser.run_js(f'getSelectOffset({bbox_id}, "{value}")')
-
-            # Start interacting with browser
-            # Step 1: Expand the selection list
-            #await browser.click(x, y)
-            #time.sleep(2)
-
             # Step 2: Press Up or Down keyboard to select the target value
+            # For Windows, we use the browser's keypress function
             for _ in range(abs(offset)):
                 await browser.keypress("ArrowDown" if offset > 0 else "ArrowUp")
 
             # Step 3: Press Enter to confirm selection
             await browser.keypress("Enter")
         else:
-            #select_index = await browser.run_js(
-            #    f'getSelectIndex({bbox_id}, "{value}")'
-            #)
-            #select_index = 2   
-            #await browser.select(bbox["ariaLabel"], select_index + 1)
-
             # Step 2: Press Up or Down keyboard to select the target value
+            # For Mac, we use osascript to simulate keypress
             script = ""
             for _ in range(abs(offset)):
                 if offset > 0:
@@ -182,6 +170,7 @@ async def select(state: AgentState):
                     script += """
                     osascript -e 'tell application "System Events" to key code 126'  # Arrow Up
                     """
+            # Step 3: Press Enter to confirm selection
             script += """
             osascript -e 'tell application "System Events" to key code 36'   # Enter
             """            
