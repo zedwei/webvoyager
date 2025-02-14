@@ -4,6 +4,7 @@ from agent import Agent
 import globals
 import platform
 import time
+import os
 from colorama import Fore
 from PIL import Image
 from io import BytesIO
@@ -36,6 +37,9 @@ class LocalClient(Client):
 
         # Wait for user input
         await self.user_query()
+
+        ### TEST
+        # await self.test_select()
 
         # Navigate to OpenTable.com as starting point
         await self.navigate("https://www.opentable.com")
@@ -112,6 +116,102 @@ class LocalClient(Client):
     async def keypress(self, key):
         await self.context.pages[-1].keyboard.press(key)
         time.sleep(0.2)
+
+    async def test_select(self):
+        await self.navigate("https://www.opentable.com/r/wild-ginger-bellevue?corrid=61c9eade-d6c3-41d2-a29e-97510792f1ef&p=2&sd=2025-02-13T01%3A15%3A00")
+        #await self.navigate("https://www.opentable.com/")
+        await self.select("Party size selector", 3)
+
+    async def select(self, aria_label, value):
+        #element = await self.context.pages[-1].evaluate("document.querySelector('select[aria-label=\"Party size selector\"]')")
+        #print(f"{Fore.RED}Element found: {element}")
+        #hidden = await self.context.pages[-1].evaluate(
+        #    "window.getComputedStyle(document.querySelector('select[aria-label=\"Party size selector\"]')).display"
+        #)
+        #print(f"{Fore.RED}Element display style: {hidden}")
+        #is_attached = await self.context.pages[-1].evaluate(
+        #    "document.querySelector('select[aria-label=\"Party size selector\"]') !== null"
+        #)
+        #print(f"{Fore.RED}Element attached in JavaScript: {is_attached}")
+
+        elements = await self.context.pages[-1].locator("select[aria-label='Party size selector']").all()
+        print(f"Number of matching elements: {len(elements)}")
+
+        for element in elements:
+            if await element.is_visible():
+                await element.click()
+        #                        
+                # Get the bounding box of the clicked element
+                #bbox = await element.bounding_box()
+                #print(f"Bounding Box: {bbox}")
+
+                break
+
+        #await self.click(938, 465)
+        # Send ArrowDown and Enter via AppleScript
+        script = """
+        osascript -e 'tell application "System Events" to key code 125'  # Arrow Down
+        osascript -e 'tell application "System Events" to key code 36'   # Enter
+        """
+
+        os.system(script)
+
+
+        #await self.context.pages[-1].keyboard.press("ArrowDown")
+        #await self.context.pages[-1].keyboard.press("ArrowDown")
+                
+        #visible_elements = await self.context.pages[-1].locator("*").all_text_contents()
+        #await self.context.pages[-1].locator("div", has_text="3 people").click()
+
+        #print(f"Visible elements after dropdown click: {visible_elements}")
+       
+        #if bbox:
+        #    print(f"Dropdown Bounding Box: {bbox}")
+        #    x = bbox["x"] + bbox["width"] / 2  # Click center horizontally
+        #    option_height = 30  # Estimated height per option
+        #    y = bbox["y"] + bbox["height"] + (option_height * 2)  # Click the third option
+
+            # Click at the computed coordinates
+        #    await self.context.pages[-1].mouse.click(x, y)
+
+        #await self.context.pages[-1].select_option("select[aria-label='Party size selector']", "3")
+        
+
+        #await self.context.pages[-1].wait_for_selector("select[aria-label='Party size selector']", state="attached", timeout=5000)
+        #await self.context.pages[-1].click("select[aria-label='Party size selector']", force=True)
+        #await self.context.pages[-1].wait_for_timeout(1000)  # Let UI update
+        #await self.context.pages[-1].select_option("select[aria-label='Party size selector']", "3")
+        
+        #for frame in self.context.pages[-1].frames:
+        #    select_exists = await frame.evaluate(
+        #        "document.querySelector('select[aria-label=\"Party size selector\"]') !== null"
+        #    )
+        #    print(f"{Fore.WHITE}Frame URL: {frame.url} | Contains dropdown: {Fore.GREEN}{select_exists}")
+        
+        #is_attached = await self.context.pages[-1].locator("select[aria-label='Party size selector']").is_attached()
+        #print(f"{Fore.RED}Element is attached: {is_attached}")
+        
+        #is_visible = await self.context.pages[-1].locator("select[aria-label='Party size selector']").is_visible()
+        #print(f"{Fore.RED}Is the dropdown visible? {is_visible}")
+
+        #await self.context.pages[-1].locator("select[aria-label='Party size selector']").scroll_into_view_if_needed()
+        #await self.context.pages[-1].wait_for_timeout(1000)  # Small delay to allow rendering
+
+        # Wait for the dropdown to be available
+        # await self.context.pages[-1].wait_for_selector(f"select[aria-label='{aria_label}']")
+        
+        # Get all options inside the select dropdown
+        #options = await page.locator(f"select[aria-label='{aria_label}'] option").all()
+
+        # Iterate over options to find the matching text
+        #for option in options:
+        #    text = option.evaluate("node => node.innerText").strip()  # Get visible text
+        #    option_value = option.get_attribute("value")  # Get corresponding value
+        #    if text == value:
+        #        break
+        
+        # Select the option
+        #await self.context.pages[-1].select_option(f"select[aria-label='{aria_label}']", f"{value}")
 
     async def inner_dialog(self, thoughts, action):
         return await super().inner_dialog(thoughts, action)

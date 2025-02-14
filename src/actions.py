@@ -1,6 +1,8 @@
 # %%
 import asyncio
 import time
+import platform
+import os
 from agent import AgentState
 from colorama import Fore
 
@@ -139,20 +141,53 @@ async def select(state: AgentState):
 
         bbox = state["bboxes"][bbox_id]
         x, y = bbox["x"], bbox["y"]
-
         offset = await browser.run_js(f'getSelectOffset({bbox_id}, "{value}")')
-
+        
         # Start interacting with browser
         # Step 1: Expand the selection list
         await browser.click(x, y)
         time.sleep(2)
+        
+        if platform.system() == "Windows":
 
-        # Step 2: Press Up or Down keyboard to select the target value
-        for _ in range(abs(offset)):
-            await browser.keypress("ArrowDown" if offset > 0 else "ArrowUp")
+            # x, y = bbox["x"], bbox["y"]
+            # offset = await browser.run_js(f'getSelectOffset({bbox_id}, "{value}")')
 
-        # Step 3: Press Enter to confirm selection
-        await browser.keypress("Enter")
+            # Start interacting with browser
+            # Step 1: Expand the selection list
+            #await browser.click(x, y)
+            #time.sleep(2)
+
+            # Step 2: Press Up or Down keyboard to select the target value
+            for _ in range(abs(offset)):
+                await browser.keypress("ArrowDown" if offset > 0 else "ArrowUp")
+
+            # Step 3: Press Enter to confirm selection
+            await browser.keypress("Enter")
+        else:
+            #select_index = await browser.run_js(
+            #    f'getSelectIndex({bbox_id}, "{value}")'
+            #)
+            #select_index = 2   
+            #await browser.select(bbox["ariaLabel"], select_index + 1)
+
+            # Step 2: Press Up or Down keyboard to select the target value
+            script = ""
+            for _ in range(abs(offset)):
+                if offset > 0:
+                    script += """
+                    osascript -e 'tell application "System Events" to key code 125'  # Arrow Down
+                    """
+                else:
+                    script += """
+                    osascript -e 'tell application "System Events" to key code 126'  # Arrow Up
+                    """
+            script += """
+            osascript -e 'tell application "System Events" to key code 36'   # Enter
+            """            
+            
+            os.system(script)
+
     except:
         return f"Failed to select the target item in the dropdown list. Try clicking the target instead."
     else:

@@ -2,6 +2,7 @@ import asyncio
 import os
 import sys
 import websockets
+import platform
 from getpass import getpass
 from colorama import init as initColorma, Fore
 from client.local_client import LocalClient
@@ -22,7 +23,10 @@ def init():
 
     _getpass("OPENAI_API_KEY")
 
-    os.system("cls")
+    if platform.system() == "Windows":
+        os.system("cls")
+    else:
+        os.system("clear")
 
 
 
