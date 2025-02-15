@@ -163,4 +163,4 @@ cython_debug/
 
 imgs/
 logs/
-data/
+data/.DS_Store

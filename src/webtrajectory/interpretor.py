@@ -1,4 +1,5 @@
 import os
+import platform
 from openai import OpenAI
 import base64
 from colorama import Fore
@@ -239,9 +240,16 @@ class Interpreter:
         for i in range(len(trajectory_data) - 1):
             current = trajectory_data[i]
             next_step = trajectory_data[i + 1]
+
+            current_img_path = current["annotated"]
+            next_img_path = next_step["annotated"]
+
+            if platform.system() != "Windows":
+                current_img_path = current_img_path.replace("\\", "/")
+                next_img_path = next_img_path.replace("\\", "/")
             
-            img_current = self.load_based64_image(current["annotated"])
-            img_next = self.load_based64_image(next_step["annotated"])
+            img_current = self.load_based64_image(current_img_path)
+            img_next = self.load_based64_image(next_img_path)
             task = current["task"]
             url = current["url"]
             
@@ -256,7 +264,8 @@ class Interpreter:
 
             # Write to text file
             with open(trajectory_txt_path, "a") as output_file:
-                for key, value in html_response.items():
+                output_file.write(f"================= Interpreted LLM response for step: {step} =================\n")
+                for key, value in response.items():
                     output_file.write(f"{key.replace('_', ' ').capitalize()}: {value}\n")
                 output_file.write("\n")
                 step += 1
@@ -307,7 +316,11 @@ def select_data_folder():
     return os.path.join("./data", selected_folder)
 
 def main():
-    os.system("cls")
+    
+    if platform.system() == "Windows":
+        os.system("cls")
+    else:
+        os.system("clear")
     folder = select_data_folder()
     if folder:
         interpreter = Interpreter(folder)
