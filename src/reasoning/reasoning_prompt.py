@@ -81,6 +81,7 @@ def prompt(state: AgentState):
             "current_url",
             "img",
             "user_request",
+            "webpage_state",
             "reasoning_trajectory_str"
         ],
     )

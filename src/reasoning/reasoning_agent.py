@@ -49,8 +49,9 @@ async def pre_process(state: AgentState):
         "webpage_category": extraction.webpage_category,
         "list_name": extraction.list_name,
         "list_time": extraction.list_time,
-        "user_request": extraction.user_request,
         "current_url": url,
+        "user_request": extraction.user_request,
+        "webpage_state": extraction.webpage_state,
         "reasoning_trajectory_str": gen_trajectory_str(state["reasoning_trajectory"]),
     }
 

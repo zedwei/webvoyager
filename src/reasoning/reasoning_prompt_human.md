@@ -9,5 +9,6 @@
 - **Time**: User requested: {request_time}, Value of time selector on current webpage: {status_time}
 - **Party Size**: User requested: {request_count}, Value of party size selector on current webpage: {status_count}
 - **Web Page Category**: {webpage_category}
+- **Web Page State**: {webpage_state}
 - **List of Restaurant Names if on search result page**: {list_name}
 - **List of Available Time Slots if on detailed page**: {list_time}
