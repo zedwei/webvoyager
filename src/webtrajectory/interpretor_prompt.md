@@ -20,7 +20,13 @@ Please use the following instructions to generate the JSON output:
  11. **Time** (Web page)
  12. **Party Size** (Web page)
  13. **Web Page Category** (Web page)
+  - The category of the web page by "[Current URL]"
   - Values: Homepage, Search result page, Detail page, Booking page
+  - ***Homepage***: The root domain (e.g., `opentable.com`). It features a horizontal list of restaurant cards displayed prominently in the middle. Avoid incorrectly tagging it as a Search result page, which typically displays a vertical list of restaurants.
+  - ***Search result page***: Identified by the path `/s`, it includes a vertical list of restaurant results. 
+  - ***Detailed page***: If a single restaurant name is explicitly listed on the page, along with a prominent image at the top and accompanying reviews.
+  - ***Booking page***: If the path contains `/booking/` and the page content prompts the user to input contact information and includes a button to "complete reservation."
+  - Cross-check the page content and URL to validate the inferred category.
  14. **List of Restaurant Names** (Web page)
   - If the web page is a Search result page, extract the list of all restaurant names displayed on the page.
  15. **List of Available Time Slots** (Web page)
@@ -34,6 +40,6 @@ Please use the following instructions to generate the JSON output:
   ## What the agent is trying to achieve with the action to complete "[User's task]"
   ## Why the agent took the action (how it helps them progress toward their goal).
 
-# What's the webpage status before agent action as **webpage_state**.
-
-# What's the webpage status after agent action as **webpage_state_after_action**.
+# What's the webpage state before agent action as **webpage_state**.
+# What's the webpage state after agent action as **webpage_state_after_action**.
+- For both the **webpage_state** and **webpage_state_after_action**, provide a summary of the key information on the webpage, including web page category, restaurant name, booking date, booking time, party size, list of restaurants (if applicable), list of available time slots (if applicable). Include the main components on the webpage as well.

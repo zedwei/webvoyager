@@ -42,6 +42,8 @@ class Interpreter:
             "step": {"type": "integer"}            
         }
         for key, details in self.schema["properties"].items():
+            if key == "webpage_category":
+                self.html_schema["webpage_url"] = {"type": "string"}
             self.html_schema[key] = details
         self.html_schema["img_before"] = {"type": "string"}
         self.html_schema["img_after"] = {"type": "string"}
@@ -117,7 +119,7 @@ class Interpreter:
                         },
                         {
                             "type": "text",
-                            "text": f"Current URL: {url}",
+                            "text": f"[Current URL]: {url}",
                         },
                         {
                             "type": "text",
@@ -152,7 +154,10 @@ class Interpreter:
             self.check_structured_response(structured_response)
             print(f"{Fore.WHITE}================= Interpreted LLM response for step: {step} =================")
             for key, value in structured_response.items():
+                if key == "webpage_category":
+                    print(f"{Fore.GREEN}Webpage URL: {Fore.YELLOW}{url}")
                 print(f"{Fore.GREEN}{key}: {Fore.YELLOW}{value}")
+            print("")
             return structured_response
         except json.JSONDecodeError:
             print(f"{Fore.RED}Failed to parse LLM response as JSON. Raw response:")
@@ -254,21 +259,23 @@ class Interpreter:
             url = current["url"]
             
             response = self.interpret(img_current, img_next, task, url, step)
+            
+            # Write to text file
             html_response = {}
             html_response["step"] = step
-            for key, value in response.items():
-                html_response[key] = value
-            html_response["img_before"] = f"data:image/png;base64,{img_current}"
-            html_response["img_after"] = f"data:image/png;base64,{img_next}"
-            steps.append(html_response)
-
-            # Write to text file
             with open(trajectory_txt_path, "a") as output_file:
                 output_file.write(f"================= Interpreted LLM response for step: {step} =================\n")
                 for key, value in response.items():
+                    if key == "webpage_category":
+                        output_file.write(f"Webpage URL: {url}\n")
+                        html_response["webpage_url"] = url
                     output_file.write(f"{key.replace('_', ' ').capitalize()}: {value}\n")
+                    html_response[key] = value
                 output_file.write("\n")
+                html_response["img_before"] = f"data:image/png;base64,{img_current}"
+                html_response["img_after"] = f"data:image/png;base64,{img_next}"
                 step += 1
+                steps.append(html_response)
 
         # Generate and write HTML file
         html_content = self.generate_html(steps)
