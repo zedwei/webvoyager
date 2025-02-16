@@ -41,6 +41,7 @@ class Interpreter:
         self.html_schema = {
             "step": {"type": "integer"}            
         }
+        self.html_schema["user_task"] = {"type": "string"}
         for key, details in self.schema["properties"].items():
             if key == "webpage_category":
                 self.html_schema["webpage_url"] = {"type": "string"}
@@ -153,9 +154,10 @@ class Interpreter:
             structured_response = json.loads(content)
             self.check_structured_response(structured_response)
             print(f"{Fore.WHITE}================= Interpreted LLM response for step: {step} =================")
+            print(f"{Fore.GREEN}user_task: {Fore.YELLOW}{task}")
             for key, value in structured_response.items():
                 if key == "webpage_category":
-                    print(f"{Fore.GREEN}Webpage URL: {Fore.YELLOW}{url}")
+                    print(f"{Fore.GREEN}webpage_url: {Fore.YELLOW}{url}")
                 print(f"{Fore.GREEN}{key}: {Fore.YELLOW}{value}")
             print("")
             return structured_response
@@ -265,6 +267,8 @@ class Interpreter:
             html_response["step"] = step
             with open(trajectory_txt_path, "a") as output_file:
                 output_file.write(f"================= Interpreted LLM response for step: {step} =================\n")
+                output_file.write(f"User task: {task}\n")
+                html_response["user_task"] = task
                 for key, value in response.items():
                     if key == "webpage_category":
                         output_file.write(f"Webpage URL: {url}\n")
