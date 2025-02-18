@@ -64,6 +64,9 @@ class Interpreter:
         for key, details in self.schema["properties"].items():
             property_type = details.get("type")
 
+            empty_response[key] = None  # Default to None for all properties
+
+            """ We shouldn't need these default values, but leave them here for now
             # Set default values based on property type
             if property_type == "string":
                 empty_response[key] = ""
@@ -77,6 +80,7 @@ class Interpreter:
                 empty_response[key] = False
             else:
                 empty_response[key] = None  # Fallback for undefined types
+            """
 
         return empty_response
     
@@ -85,6 +89,17 @@ class Interpreter:
             property_type = details.get("type")
 
             # Set default values based on property type
+            if property_type == "string":
+                if structured_response[key] == "" or structured_response[key] == "Not Specified":
+                    structured_response[key] = "None"
+            elif property_type == "array":
+                if structured_response[key] == []:
+                    structured_response[key] = None
+            elif property_type == "object":
+                if structured_response[key] == {}:
+                    structured_response[key] = None
+
+            """ We shouldn't need these default values, but leave them here for now
             if property_type == "string":
                 if structured_response[key] == "":
                     structured_response[key] = "None"
@@ -100,6 +115,7 @@ class Interpreter:
             elif property_type == "boolean":
                 if structured_response[key] == None:
                     structured_response[key] = False
+            """
 
     def interpret(self, img_before, img_after, task, url, step):
         prompt_template = self.load_prompt()
@@ -243,6 +259,7 @@ class Interpreter:
 
         steps = []
         step = 0
+        few_shots = []
 
         for i in range(len(trajectory_data) - 1):
             current = trajectory_data[i]
@@ -265,26 +282,34 @@ class Interpreter:
             # Write to text file
             html_response = {}
             html_response["step"] = step
+            one_shot = {}
             with open(trajectory_txt_path, "a") as output_file:
                 output_file.write(f"================= Interpreted LLM response for step: {step} =================\n")
                 output_file.write(f"User task: {task}\n")
                 html_response["user_task"] = task
+                one_shot["user_task"] = task
                 for key, value in response.items():
                     if key == "webpage_category":
                         output_file.write(f"Webpage URL: {url}\n")
                         html_response["webpage_url"] = url
+                        one_shot["webpage_url"] = url
                     output_file.write(f"{key.replace('_', ' ').capitalize()}: {value}\n")
                     html_response[key] = value
+                    one_shot[key] = value
                 output_file.write("\n")
                 html_response["img_before"] = f"data:image/png;base64,{img_current}"
                 html_response["img_after"] = f"data:image/png;base64,{img_next}"
                 step += 1
                 steps.append(html_response)
+                few_shots.append(one_shot)
 
         # Generate and write HTML file
         html_content = self.generate_html(steps)
         with open(os.path.join(self.folder, "trajectory.html"), "w", encoding='utf-8') as html_file:
             html_file.write(html_content)
+
+        with open(os.path.join(self.folder, "few_shots.json"), "w", encoding='utf-8') as json_file:
+            json.dump(few_shots, json_file, ensure_ascii=False, indent=4)
 
 def select_data_folder():
     """

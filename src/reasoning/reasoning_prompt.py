@@ -3,10 +3,11 @@ from langchain.prompts.chat import SystemMessagePromptTemplate
 from langchain.prompts.chat import HumanMessagePromptTemplate
 from langchain_core.prompts.image import ImagePromptTemplate
 from langchain_core.prompts import PromptTemplate
+from langchain.schema import AIMessage, SystemMessage
 from pydantic import BaseModel, Field
-from globals import GLOBAL_PROMPT_TEMPLATE, ENABLE_FEW_SHOTS
+from globals import GLOBAL_PROMPT_TEMPLATE, ENABLE_FEW_SHOTS, ADD_FEW_SHOT_EXAMPLES
 from interfaces import AgentState
-
+from reasoning.reasoning_few_shots import ReasoningFewShots
 
 def retrieve_prompt(page_category: str):
     if ENABLE_FEW_SHOTS:
@@ -28,6 +29,22 @@ def retrieve_prompt(page_category: str):
 def prompt(state: AgentState):
     page_category = state["extraction"].webpage_category
     system_prompt = retrieve_prompt(page_category)
+    
+    few_shot_examples = []
+    if ADD_FEW_SHOT_EXAMPLES:
+        few_shots = ReasoningFewShots()
+        few_shots.load_few_shots()
+        few_shot_prompts = few_shots.generate_few_shot_prompts()
+        few_shot_responses = few_shots.generate_few_shot_responses()
+
+        for prompt_text, response_text in zip(few_shot_prompts, few_shot_responses):
+            few_shot_examples.append(
+                HumanMessagePromptTemplate(
+                    prompt=[PromptTemplate.from_template(prompt_text)]
+                )
+            )
+            few_shot_examples.append(AIMessage(content=response_text))
+
     return ChatPromptTemplate(
         messages=[
             SystemMessagePromptTemplate(
@@ -44,6 +61,14 @@ def prompt(state: AgentState):
                     )
                 ]
             ),
+
+            # Instruction for Few-Shot Learning (Only if examples are included)
+            SystemMessage(
+                content="The following are examples of step-by-step logical reasoning. Learn from these examples and apply a similar approach to future user queries."
+            ) if ADD_FEW_SHOT_EXAMPLES else None,
+            # Few-Shot Examples (Dynamically Added)
+            *few_shot_examples,
+
             HumanMessagePromptTemplate(
                 prompt=[
                     PromptTemplate.from_template("[Web Page]\n"),
