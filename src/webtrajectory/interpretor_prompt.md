@@ -48,17 +48,30 @@ Please use the following instructions to generate the JSON output:
 - Prioritize information explicitly visible or highlighted.
 - Identify key details displayed on the page, focusing on date, time, party size, restaurant name, and page category.
 
-## Thought:
-- Summarize where each parameter was extracted from (e.g., "The restaurant name was extracted from the user's task, the party size was extracted from the user's task, and the date and time were identified from the select box on the web page.").
-
-Be thorough and accurate, treating the user input (including both initial query and later Q&As) and the web page image as completely independent sources of information.
-
 # What action the agent took as **agent_action**, based on "[User's task]" and reasoning over "[Screenshot before the agent action]" and "[Screenshot after the agent action]"
 
 # Reason about the agent's next immediate step based on **agent_action** in the "[Screenshot before the agent action]", "[User's task]", and the resulting "[Screenshot after the agent action]".
-- Add your reasoning in the **thought** field of the output JSON schema, including:
- ## What the agent is trying to achieve with the action to complete "[User's task]"
- ## Why the agent took the action (how it helps them progress toward their goal).
+## Put your reasoning in the **thought** field of the output JSON schema.
+[IMPORTANT]:  
+- The **thought** MUST follow this format:  
+  **1. Goal** → What is the agent trying to achieve?  
+  **2. Why This Action?** → Why was this action chosen?  
+  **3. Possible Alternative Actions on This Page** → Evaluate top three alternative possible actions.
+  **4. Summary of Actions Not Taken** → Use the format: "Instead of [X], the agent [did Y]."  
+
+- **What is the agent's immediate goal?**  
+  - Clearly explain what the agent is trying to achieve in this step to make progress towards completing "[User's task]".
+  
+- **Why did the agent take this action?**  
+  - Explain how this action helps progress toward the goal.
+  
+- **Alternative actions that were available on the page:**  
+  - List at least **three possible actions** that the agent could have taken.
+  - For each action, explain **whether or not the agent took it**.
+
+- **Summarize what the agent DID NOT do:**  
+  - Use the format:  
+    **"Instead of [other possible actions], the agent [took the actual action]."**
 
 # What's the webpage state before agent action as **webpage_state**.
 # What's the webpage state after agent action as **webpage_state_after_action**.

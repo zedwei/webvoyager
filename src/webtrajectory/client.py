@@ -25,7 +25,8 @@ class Client:
             channel="msedge", headless=False, args=["--window-position=0,0"]
         )
         self.context = await self.browser.new_context(
-            viewport={"width": 1024, "height": 768}
+            #viewport={"width": 1024, "height": 768}
+            viewport={"width": 1280, "height": 1080}
         )
         await self.context.expose_function("handle_click", self.handle_click)
         await self.context.add_init_script(click_listener_script)

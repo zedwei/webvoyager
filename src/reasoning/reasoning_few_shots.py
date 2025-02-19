@@ -3,6 +3,12 @@ import platform
 from colorama import Fore
 import json
 import re
+
+# Add parent directory to sys.path
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
+
 from interfaces import ReasoningResponse
 from pydantic import BaseModel
 
@@ -27,7 +33,8 @@ class ReasoningFewShots:
             file_path = os.path.join(self.data_folder_path, file_path)
             try:
                 with open(file_path, "r", encoding="utf-8") as json_file:
-                    self.few_shots = json.load(json_file)
+                    few_shots = json.load(json_file)
+                    self.few_shots += few_shots
             except FileNotFoundError:
                 print(f"File not found: {file_path}")
 
@@ -116,7 +123,7 @@ class ReasoningFewShots:
         for one_shot in self.few_shots:
             few_shot_prompts.append(self.generate_one_shot_prompt(one_shot, prompt_template) + "\n")
         
-        few_shot_prompts = few_shot_prompts[1:]
+        # few_shot_prompts = few_shot_prompts[1:]
 
         return few_shot_prompts
     
@@ -129,7 +136,7 @@ class ReasoningFewShots:
             ).model_dump_json()
             few_shot_responses.append(one_shot_response)
         
-        few_shot_responses = few_shot_responses[1:]
+        # few_shot_responses = few_shot_responses[1:]
         
         return few_shot_responses
     
@@ -142,10 +149,10 @@ def main():
     reasoning_few_shots = ReasoningFewShots()
     reasoning_few_shots.load_few_shots()
     few_shot_prompts = reasoning_few_shots.generate_few_shot_prompts()
-    few_shot_thoughts = reasoning_few_shots.generate_few_shot_thoughts()
-    for prompt, thought in zip(few_shot_prompts, few_shot_thoughts):
+    few_shot_responses = reasoning_few_shots.generate_few_shot_responses()
+    for prompt, response in zip(few_shot_prompts, few_shot_responses):
         print(f"{Fore.WHITE}{prompt}")
-        print(f"{Fore.YELLOW}{thought}")
+        print(f"{Fore.YELLOW}{response}")
         print(f"{Fore.GREEN}{'='*50}")
         
    

@@ -156,8 +156,8 @@ class Interpreter:
                         },
                     ],
                 },
-            ]
-            #temperature=0.2
+            ],
+            temperature=0.7
         )
         
         response_json = response.to_dict()
