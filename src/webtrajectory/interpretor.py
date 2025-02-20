@@ -1,53 +1,99 @@
 import os
 import platform
-from openai import OpenAI
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage
+from langchain_core.runnables import RunnablePassthrough
+from langchain.prompts.chat import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
+from langchain_core.prompts import PromptTemplate
+from langchain_core.prompts.image import ImagePromptTemplate
 import base64
 from colorama import Fore
 import json
-from datetime import datetime
+from datetime import datetime, time, date
+from typing import Optional, List
+import sys
+from pathlib import Path
 
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-TASK = "book a table at a steakhouse restaurant for 3 people on 1/28 9pm"
+# Add the src directory to the Python path
+src_path = str(Path(__file__).parent.parent)
+if src_path not in sys.path:
+    sys.path.append(src_path)
+
+from extraction.extraction_prompt import ExtractionResponse
+from interfaces import ReasoningResponse
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, (date, time)):
+            return str(obj)
+        return super().default(obj)
+
+def format_time_value(value):
+    """Format a time value to 12-hour format with AM/PM"""
+    if isinstance(value, time):
+        return value.strftime("%I:%M %p").lstrip("0")
+    elif isinstance(value, date):
+        return value.strftime("%m/%d/%Y")
+    elif isinstance(value, list):
+        if all(isinstance(x, time) for x in value):
+            return [t.strftime("%I:%M %p").lstrip("0") for t in value]
+        elif all(isinstance(x, date) for x in value):
+            return [d.strftime("%m/%d/%Y") for d in value]
+    return value
+
+# Initialize LLMs
+extraction_llm = ChatOpenAI(
+    model="gpt-4o",
+    max_tokens=16384
+).with_structured_output(ExtractionResponse).with_retry(
+    stop_after_attempt=3
+)
+
+reasoning_llm = ChatOpenAI(
+    model="gpt-4o",
+    max_tokens=16384
+).with_structured_output(ReasoningResponse).with_retry(
+    stop_after_attempt=3
+)
 
 class Interpreter:
 
-    def __init__(self, folder, prompt_file = "./src/webtrajectory/interpretor_prompt.md"):
+    def __init__(self, folder):
         self.folder = folder
-        self.schema = {
-            "type": "object",
-            "properties": {
-                "user_request": {"type": "string"},
-                "request_name": {"type": "string"},
-                "request_category": {"type": "string"},
-                "request_category_search": {"type": "string"},
-                "request_date": {"type": "string"},
-                "request_time": {"type": "string"},
-                "request_count": {"type": "string"},
-                "status_name": {"type": "string"},
-                "status_date": {"type": "string"},
-                "status_time": {"type": "string"},
-                "status_count": {"type": "string"},
-                "list_name": {"type": "array"},
-                "list_time": {"type": "array"},
-                "webpage_category": {"type": "string"},
-                "webpage_state": {"type": "string"},
-                "thought": {"type": "string"},
-                "agent_action": {"type": "string"},
-                "webpage_state_after_action": {"type": "string"}
-            },        
-        }
-        self.prompt_file = prompt_file
 
+        # Initialize HTML schema with ordered fields
         self.html_schema = {
-            "step": {"type": "integer"}            
+            "step": {"type": "integer"},
+            "user_task": {"type": "string"}            
         }
-        self.html_schema["user_task"] = {"type": "string"}
-        for key, details in self.schema["properties"].items():
-            if key == "webpage_category":
+        
+        
+        # Add fields from ExtractionResponse in order of definition
+        extraction_schema = ExtractionResponse.model_json_schema()
+        for field_name in extraction_schema["properties"]:
+            field_info = extraction_schema["properties"][field_name]
+            self.html_schema[field_name] = {"type": field_info.get("type", "string")}
+            if field_name == "webpage_category":
                 self.html_schema["webpage_url"] = {"type": "string"}
-            self.html_schema[key] = details
+        
+
+        # Add fields from ReasoningResponse in order of definition
+        reasoning_schema = ReasoningResponse.model_json_schema()
+        for field_name in reasoning_schema["properties"]:
+            field_info = reasoning_schema["properties"][field_name]
+            self.html_schema[field_name] = {"type": field_info.get("type", "string")}
+
         self.html_schema["img_before"] = {"type": "string"}
         self.html_schema["img_after"] = {"type": "string"}
+
+        self.extraction_prompt_path = "./src/extraction/extraction_prompt.md"
+        self.reasoning_prompt_human_path = "./src/webtrajectory/reasoning_prompt_human.md"
+        self.reasoning_prompt_system_path = "./src/webtrajectory/reasoning_prompt.md"
+        self.reasoning_prompt_ot_booking_path = "./src/webtrajectory/opentable/booking_prompt.md"
+        self.reasoning_prompt_ot_detailed_path = "./src/webtrajectory/opentable/detailed_prompt.md"
+        self.reasoning_prompt_ot_homepage_path = "./src/webtrajectory/opentable/homepage_prompt.md"
+        self.reasoning_prompt_ot_search_path = "./src/webtrajectory/opentable/search_prompt.md"
+        
 
     def load_based64_image(self, image_path):
         with open(image_path, "rb") as image_file:
@@ -61,9 +107,8 @@ class Interpreter:
     def generate_empty_response(self):
         empty_response = {}
     
-        for key, details in self.schema["properties"].items():
-            property_type = details.get("type")
-
+        for key in self.html_schema.keys():
+            
             empty_response[key] = None  # Default to None for all properties
 
             """ We shouldn't need these default values, but leave them here for now
@@ -85,7 +130,7 @@ class Interpreter:
         return empty_response
     
     def check_structured_response(self, structured_response):
-         for key, details in self.schema["properties"].items():
+         for key, details in self.html_schema.items():
             property_type = details.get("type")
 
             # Set default values based on property type
@@ -117,72 +162,117 @@ class Interpreter:
                     structured_response[key] = False
             """
 
+    def generate_reasoning_human_prompt(self, task, extraction_data):
+        try:
+            with open(self.reasoning_prompt_human_path, "r") as file:
+                prompt_template = file.read()
+        except FileNotFoundError:
+            print(f"Prompt template file not found at {self.reasoning_prompt_human_path}.")
+            return
+
+        # prompt_template = prompt_template.replace("{user_request}", task)
+        for key, value in extraction_data.model_dump().items():
+            value = format_time_value(value)
+            prompt_template = prompt_template.replace(f"{{{key}}}", str(value))
+        
+        return prompt_template
+
+    def retrieve_prompt(self, page_category: str):
+        if page_category and "home".casefold() in page_category.casefold():
+            return PromptTemplate.from_file(self.reasoning_prompt_ot_homepage_path)
+        elif page_category and "search".casefold() in page_category.casefold():
+            return PromptTemplate.from_file(self.reasoning_prompt_ot_search_path)
+        elif page_category and "detail".casefold() in page_category.casefold():
+            return PromptTemplate.from_file(self.reasoning_prompt_ot_detailed_path)
+        elif page_category and "booking".casefold() in page_category.casefold():
+            return PromptTemplate.from_file(self.reasoning_prompt_ot_booking_path)
+        else:
+            return PromptTemplate.from_file(self.reasoning_prompt_system_path)
+    
     def interpret(self, img_before, img_after, task, url, step):
-        prompt_template = self.load_prompt()
-        prompt = prompt_template.replace("{schema}", json.dumps(self.schema, indent=4))
-        response = client.chat.completions.create(
-            model="gpt-4o",
+        """Interpret the current state and generate next action."""
+        # Step 1: Extraction
+        # extraction_prompt = self.load_prompt()
+        
+        # Create chat prompt template
+        extraction_template = ChatPromptTemplate(
             messages=[
-                {
-                    "role": "system",
-                    "content": f"{prompt}",
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": f"[User's task]: {task}",
-                        },
-                        {
-                            "type": "text",
-                            "text": f"[Current URL]: {url}",
-                        },
-                        {
-                            "type": "text",
-                            "text": "[Here is the screeshot before the user action]:",
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/png;base64,{img_before}"},
-                        },
-                        {
-                            "type": "text",
-                            "text": "[Here is the screeshot after the user action]:",
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": f"data:image/png;base64,{img_after}"},
-                        },
+                SystemMessagePromptTemplate(
+                    prompt=[
+                        PromptTemplate.from_file(self.extraction_prompt_path),
                     ],
-                },
-            ],
-            temperature=0.7
+                ),
+                HumanMessagePromptTemplate(
+                    prompt=[
+                        PromptTemplate.from_template("[Web Page]\n"),
+                        ImagePromptTemplate(
+                            template={"url": "data:image/png;base64,{img}"},
+                            input_variables=["img"]
+                        ),
+                        PromptTemplate.from_template("\n\nCurrent URL: {url}\n"),
+                        PromptTemplate.from_template("[User Request]\n{task}")
+                    ]
+                )
+            ]
         )
         
-        response_json = response.to_dict()
-        content = response_json["choices"][0]["message"]["content"]
+        # Format the messages with our data
+        extraction_messages = extraction_template.format_messages(
+            img=img_before,
+            url=url,
+            task=task
+        )
+
+        # Run extraction
+        extraction_response = extraction_llm.invoke(extraction_messages)
         
-        # Remove any markdown code block markers if present
-        content = content.replace("```json", "").replace("```", "").strip()
+        # Step 2: Reasoning
+        system_prompt = self.retrieve_prompt(extraction_response.webpage_category)
+        reasoning_human_prompt = self.generate_reasoning_human_prompt(task, extraction_response)
         
-        try:
-            structured_response = json.loads(content)
-            self.check_structured_response(structured_response)
-            print(f"{Fore.WHITE}================= Interpreted LLM response for step: {step} =================")
-            print(f"{Fore.GREEN}user_task: {Fore.YELLOW}{task}")
-            for key, value in structured_response.items():
-                if key == "webpage_category":
-                    print(f"{Fore.GREEN}webpage_url: {Fore.YELLOW}{url}")
-                print(f"{Fore.GREEN}{key}: {Fore.YELLOW}{value}")
-            print("")
-            return structured_response
-        except json.JSONDecodeError:
-            print(f"{Fore.RED}Failed to parse LLM response as JSON. Raw response:")
-            print(f"{Fore.RED}{content}")
-            empty_structured_response = self.generate_empty_response()
-            return empty_structured_response
- 
+        reasoning_template = ChatPromptTemplate(
+            messages=[
+                SystemMessagePromptTemplate(
+                    prompt=system_prompt
+                ),
+                HumanMessagePromptTemplate(
+                    prompt=[
+                        PromptTemplate.from_template("[Web Page]\n"),
+                        ImagePromptTemplate(
+                            template={"url": "data:image/png;base64,{img}"},
+                            input_variables=["img"]
+                        ),
+                        PromptTemplate.from_template("\n\nCurrent URL: {url}\n"),
+                        PromptTemplate.from_template(reasoning_human_prompt)
+                    ]
+                )
+            ]
+        )
+
+        # Format the messages with our data
+        reasoning_messages = reasoning_template.format_messages(
+            img=img_before,
+            url=url
+        )
+
+        # Run reasoning
+        reasoning_response = reasoning_llm.invoke(reasoning_messages)
+        
+        # Generate the interpretor's response
+        interpretation_response = {}
+        for key, value in extraction_response.model_dump().items():
+            interpretation_response[key] = format_time_value(value)
+        for key, value in reasoning_response.model_dump().items():
+            interpretation_response[key] = format_time_value(value)
+
+        print(f"{Fore.WHITE}================= Interpreted LLM response for step: {step} =================")
+        print(f"{Fore.GREEN}user_task: {Fore.YELLOW}{task}")
+        for key, value in interpretation_response.items():
+            print(f"{Fore.GREEN}{key}: {Fore.YELLOW}{value}")
+        print("")
+
+        return interpretation_response
+    
     def generate_html(self, steps):
         html_content = """
         <!DOCTYPE html>
@@ -293,6 +383,7 @@ class Interpreter:
                         output_file.write(f"Webpage URL: {url}\n")
                         html_response["webpage_url"] = url
                         one_shot["webpage_url"] = url
+                    value = format_time_value(value)
                     output_file.write(f"{key.replace('_', ' ').capitalize()}: {value}\n")
                     html_response[key] = value
                     one_shot[key] = value
@@ -309,7 +400,7 @@ class Interpreter:
             html_file.write(html_content)
 
         with open(os.path.join(self.folder, "few_shots.json"), "w", encoding='utf-8') as json_file:
-            json.dump(few_shots, json_file, ensure_ascii=False, indent=4)
+            json.dump(few_shots, json_file, ensure_ascii=False, indent=4, cls=DateTimeEncoder)
 
 def select_data_folder():
     """
