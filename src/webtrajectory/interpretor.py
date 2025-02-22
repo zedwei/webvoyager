@@ -13,6 +13,7 @@ from datetime import datetime, time, date
 from typing import Optional, List
 import sys
 from pathlib import Path
+from pydantic import BaseModel, Field
 
 # Add the src directory to the Python path
 src_path = str(Path(__file__).parent.parent)
@@ -20,7 +21,6 @@ if src_path not in sys.path:
     sys.path.append(src_path)
 
 from extraction.extraction_prompt import ExtractionResponse
-from interfaces import ReasoningResponse
 
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -41,6 +41,26 @@ def format_time_value(value):
             return [d.strftime("%m/%d/%Y") for d in value]
     return value
 
+# Output Pydantic
+class ReasoningResponse(BaseModel):
+    thought: str = Field(
+        description="A brief reasoning explaining why these actions are chosen."
+    )
+    top_actions: List[str] = Field(
+        description="A concrete description of the top 3 possible actions to take. E.g. Update the party size selector on web page to 3."
+    )
+
+class OneShotResponse(BaseModel):
+    thought: str = Field(
+        description="A brief reasoning explaining why this action was chosen."
+    )
+    action: str = Field(
+        description="A concrete description of the action that should be chosen. Please only include a single action. E.g. Update the party size selector on web page to 3."
+    )
+    actions_to_avoid: List[str] = Field(
+        description="A list of actions that should not be chosen. They are the ones from the top possible actions that do NOT match the actual action. E.g. ['GoBack', 'Navigate']"
+    )
+
 # Initialize LLMs
 extraction_llm = ChatOpenAI(
     model="gpt-4o",
@@ -55,6 +75,27 @@ reasoning_llm = ChatOpenAI(
 ).with_structured_output(ReasoningResponse).with_retry(
     stop_after_attempt=3
 )
+
+oneshot_llm = ChatOpenAI(
+    model="gpt-4o",
+    max_tokens=16384
+).with_structured_output(OneShotResponse).with_retry(
+    stop_after_attempt=3
+)
+
+def generate_extraction_results_human_prompt(prompt_path, extraction_data):
+    try:
+        with open(prompt_path, "r") as file:
+            prompt_template = file.read()
+    except FileNotFoundError:
+        print(f"Prompt template file not found at {prompt_path}.")
+        return
+
+    for key, value in extraction_data.model_dump().items():
+        value = format_time_value(value)
+        prompt_template = prompt_template.replace(f"{{{key}}}", str(value))
+        
+    return prompt_template
 
 class Interpreter:
 
@@ -86,13 +127,24 @@ class Interpreter:
         self.html_schema["img_before"] = {"type": "string"}
         self.html_schema["img_after"] = {"type": "string"}
 
+        # Prompt to generate the extraction results of user request and web page
         self.extraction_prompt_path = "./src/extraction/extraction_prompt.md"
-        self.reasoning_prompt_human_path = "./src/webtrajectory/reasoning_prompt_human.md"
-        self.reasoning_prompt_system_path = "./src/webtrajectory/reasoning_prompt.md"
-        self.reasoning_prompt_ot_booking_path = "./src/webtrajectory/opentable/booking_prompt.md"
-        self.reasoning_prompt_ot_detailed_path = "./src/webtrajectory/opentable/detailed_prompt.md"
-        self.reasoning_prompt_ot_homepage_path = "./src/webtrajectory/opentable/homepage_prompt.md"
-        self.reasoning_prompt_ot_search_path = "./src/webtrajectory/opentable/search_prompt.md"
+        
+        # Prompts to generate the reasoning of the top possible actions
+        self.reasoning_prompt_human_path = "./src/reasoning/reasoning_prompt_human.md"
+        self.reasoning_prompt_system_path = "./src/reasoning/reasoning_prompt_system.md"
+        self.reasoning_prompt_ot_booking_path = "./src/reasoning/opentable/booking_prompt.md"
+        self.reasoning_prompt_ot_detailed_path = "./src/reasoning/opentable/detailed_prompt.md"
+        self.reasoning_prompt_ot_homepage_path = "./src/reasoning/opentable/homepage_prompt.md"
+        self.reasoning_prompt_ot_search_path = "./src/reasoning/opentable/search_prompt.md"
+
+        # Prompts to generate the one-shot example of the current step
+        self.oneshot_prompt_human_path = "./src/webtrajectory/oneshot_prompt_human.md"
+        self.oneshot_prompt_system_path = "./src/webtrajectory/oneshot_prompt_system.md"
+        self.oneshot_prompt_ot_booking_path = "./src/webtrajectory/opentable/booking_prompt.md"
+        self.oneshot_prompt_ot_detailed_path = "./src/webtrajectory/opentable/detailed_prompt.md"
+        self.oneshot_prompt_ot_homepage_path = "./src/webtrajectory/opentable/homepage_prompt.md"
+        self.oneshot_prompt_ot_search_path = "./src/webtrajectory/opentable/search_prompt.md"
         
 
     def load_based64_image(self, image_path):
@@ -162,22 +214,7 @@ class Interpreter:
                     structured_response[key] = False
             """
 
-    def generate_reasoning_human_prompt(self, task, extraction_data):
-        try:
-            with open(self.reasoning_prompt_human_path, "r") as file:
-                prompt_template = file.read()
-        except FileNotFoundError:
-            print(f"Prompt template file not found at {self.reasoning_prompt_human_path}.")
-            return
-
-        # prompt_template = prompt_template.replace("{user_request}", task)
-        for key, value in extraction_data.model_dump().items():
-            value = format_time_value(value)
-            prompt_template = prompt_template.replace(f"{{{key}}}", str(value))
-        
-        return prompt_template
-
-    def retrieve_prompt(self, page_category: str):
+    def retrieve_reasoning_system_prompt(self, page_category: str):
         if page_category and "home".casefold() in page_category.casefold():
             return PromptTemplate.from_file(self.reasoning_prompt_ot_homepage_path)
         elif page_category and "search".casefold() in page_category.casefold():
@@ -188,6 +225,18 @@ class Interpreter:
             return PromptTemplate.from_file(self.reasoning_prompt_ot_booking_path)
         else:
             return PromptTemplate.from_file(self.reasoning_prompt_system_path)
+
+    def retrieve_oneshot_system_prompt(self, page_category: str):
+        if page_category and "home".casefold() in page_category.casefold():
+            return PromptTemplate.from_file(self.oneshot_prompt_ot_homepage_path)
+        elif page_category and "search".casefold() in page_category.casefold():
+            return PromptTemplate.from_file(self.oneshot_prompt_ot_search_path)
+        elif page_category and "detail".casefold() in page_category.casefold():
+            return PromptTemplate.from_file(self.oneshot_prompt_ot_detailed_path)
+        elif page_category and "booking".casefold() in page_category.casefold():
+            return PromptTemplate.from_file(self.oneshot_prompt_ot_booking_path)
+        else:
+            return PromptTemplate.from_file(self.oneshot_prompt_system_path)
     
     def interpret(self, img_before, img_after, task, url, step):
         """Interpret the current state and generate next action."""
@@ -226,23 +275,27 @@ class Interpreter:
         # Run extraction
         extraction_response = extraction_llm.invoke(extraction_messages)
         
-        # Step 2: Reasoning
-        system_prompt = self.retrieve_prompt(extraction_response.webpage_category)
-        reasoning_human_prompt = self.generate_reasoning_human_prompt(task, extraction_response)
+        # Step 2: Reasoning about possible actions
+        reasoning_system_prompt = self.retrieve_reasoning_system_prompt(extraction_response.webpage_category)
+        reasoning_human_prompt = generate_extraction_results_human_prompt(self.reasoning_prompt_human_path, extraction_response)
         
         reasoning_template = ChatPromptTemplate(
             messages=[
                 SystemMessagePromptTemplate(
-                    prompt=system_prompt
+                    prompt=reasoning_system_prompt
                 ),
                 HumanMessagePromptTemplate(
                     prompt=[
                         PromptTemplate.from_template("[Web Page]\n"),
                         ImagePromptTemplate(
-                            template={"url": "data:image/png;base64,{img}"},
-                            input_variables=["img"]
+                            template={"url": "data:image/png;base64,{img_before}"},
+                            input_variables=["img_before"]
                         ),
-                        PromptTemplate.from_template("\n\nCurrent URL: {url}\n"),
+                        PromptTemplate.from_template("\n\nCurrent URL: {url}\n")
+                    ]
+                ),
+                HumanMessagePromptTemplate(
+                    prompt=[
                         PromptTemplate.from_template(reasoning_human_prompt)
                     ]
                 )
@@ -251,18 +304,68 @@ class Interpreter:
 
         # Format the messages with our data
         reasoning_messages = reasoning_template.format_messages(
-            img=img_before,
+            img_before=img_before,
             url=url
         )
 
         # Run reasoning
         reasoning_response = reasoning_llm.invoke(reasoning_messages)
+
+        # Step 3: Generate the one-shot example of the current step
+        oneshot_system_prompt = self.retrieve_oneshot_system_prompt(extraction_response.webpage_category)
+        oneshot_human_prompt = generate_extraction_results_human_prompt(self.oneshot_prompt_human_path, extraction_response)
+        
+        oneshot_template = ChatPromptTemplate(
+            messages=[
+                SystemMessagePromptTemplate(
+                    prompt=oneshot_system_prompt
+                ),
+                HumanMessagePromptTemplate(
+                    prompt=[
+                        PromptTemplate.from_template("[Web Page before the action]\n"),
+                        ImagePromptTemplate(
+                            template={"url": "data:image/png;base64,{img_before}"},
+                            input_variables=["img_before"]
+                        ),
+                        PromptTemplate.from_template("\n\nURL of the web page before the action: {url}\n"),
+                        PromptTemplate.from_template("[Web Page after the action]\n"),
+                        ImagePromptTemplate(
+                            template={"url": "data:image/png;base64,{img_after}"},
+                            input_variables=["img_after"]
+                        ),
+                    ]
+                ),
+                HumanMessagePromptTemplate(
+                    prompt=[
+                        PromptTemplate.from_template(oneshot_human_prompt)
+                    ]
+                ),
+                HumanMessagePromptTemplate(
+                    prompt=[    
+                        PromptTemplate.from_template("[Top possible actions]: {top_actions}\n")
+                    ]
+                )
+            ]
+        )
+
+        # Format the messages with our data
+        oneshot_messages = oneshot_template.format_messages(
+            img_before=img_before,
+            url=url,
+            img_after=img_after,
+            top_actions=reasoning_response.top_actions
+        )
+
+        # Run reasoning
+        oneshot_response = oneshot_llm.invoke(oneshot_messages)
         
         # Generate the interpretor's response
         interpretation_response = {}
         for key, value in extraction_response.model_dump().items():
             interpretation_response[key] = format_time_value(value)
         for key, value in reasoning_response.model_dump().items():
+            interpretation_response[key] = format_time_value(value)
+        for key, value in oneshot_response.model_dump().items():
             interpretation_response[key] = format_time_value(value)
 
         print(f"{Fore.WHITE}================= Interpreted LLM response for step: {step} =================")

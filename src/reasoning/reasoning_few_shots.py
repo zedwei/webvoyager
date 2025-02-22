@@ -4,14 +4,6 @@ from colorama import Fore
 import json
 import re
 
-# Add parent directory to sys.path
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-
-
-from interfaces import ReasoningResponse
-from pydantic import BaseModel
-
 class ReasoningFewShots:
 
     def __init__(self, data_folder_path = "./data"):
@@ -123,20 +115,17 @@ class ReasoningFewShots:
         for one_shot in self.few_shots:
             few_shot_prompts.append(self.generate_one_shot_prompt(one_shot, prompt_template) + "\n")
         
-        # few_shot_prompts = few_shot_prompts[1:]
-
         return few_shot_prompts
     
     def generate_few_shot_responses(self):
         few_shot_responses = []
         for one_shot in self.few_shots:
-            one_shot_response = ReasoningResponse(
-                thought = one_shot["thought"],
-                action = one_shot["agent_action"]
-            ).model_dump_json()
+            one_shot_response = (
+                f"thought: {one_shot['thought']}\n"
+                f"action: {one_shot['action']}\n"
+                f"actions_to_avoid: {one_shot['actions_to_avoid']}"
+            )
             few_shot_responses.append(one_shot_response)
-        
-        # few_shot_responses = few_shot_responses[1:]
         
         return few_shot_responses
     

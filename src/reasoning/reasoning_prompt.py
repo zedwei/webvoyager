@@ -37,58 +37,72 @@ def prompt(state: AgentState):
         few_shot_prompts = few_shots.generate_few_shot_prompts()
         few_shot_responses = few_shots.generate_few_shot_responses()
 
-        for prompt_text, response_text in zip(few_shot_prompts, few_shot_responses):
+        for i, (prompt_text, response_text) in enumerate(zip(few_shot_prompts, few_shot_responses), 1):
             few_shot_examples.append(
                 HumanMessagePromptTemplate(
-                    prompt=[PromptTemplate.from_template(prompt_text)]
+                    prompt=[PromptTemplate.from_template(
+                        f"[Example {i}]\n\n"
+                        f"## Example inputs:\n\n"
+                        f"{prompt_text}\n\n"
+                        f"## Example responses:\n\n"
+                        f"{response_text}"
+                    )]
                 )
             )
-            few_shot_examples.append(AIMessage(content=response_text))
+
+    # Build the messages list
+    messages = [
+        SystemMessagePromptTemplate(
+            prompt=[
+                system_prompt,
+            ],
+        ),
+        GLOBAL_PROMPT_TEMPLATE,
+        # System template to include reasoning trajectory
+        SystemMessagePromptTemplate(
+            prompt=[
+                PromptTemplate.from_file(
+                    f"./src/reasoning/reasoning_trajectory.md"
+                )
+            ]
+        ),
+    ]
+
+    # Add few-shot examples if enabled
+    if ADD_FEW_SHOT_EXAMPLES:
+        messages.append(
+            SystemMessage(
+                content="The following are examples of logical reasoning about what action to take. Learn from these examples and apply a similar approach to \"[Future User Task]\"."
+            )
+        )
+        messages.extend(few_shot_examples)
+
+    # Add the final human message templates
+    messages.extend([
+        HumanMessagePromptTemplate(
+            prompt=[
+                PromptTemplate.from_template("[Future User Task]\n"),
+                PromptTemplate.from_template("[Web Page]\n"),
+                ImagePromptTemplate(
+                    template={"url": "data:image/png;base64,{img}"},
+                    input_variables=[
+                        "img",
+                    ],
+                ),
+                PromptTemplate.from_template("\n\nCurrent URL: {current_url}"),
+            ],
+        ),
+        HumanMessagePromptTemplate(
+            prompt=[
+                PromptTemplate.from_file(
+                    f"./src/reasoning/reasoning_prompt_human.md"
+                ),
+            ],
+        ),
+    ])
 
     return ChatPromptTemplate(
-        messages=[
-            SystemMessagePromptTemplate(
-                prompt=[
-                    system_prompt,
-                ],
-            ),
-            GLOBAL_PROMPT_TEMPLATE,
-            # System template to include reasoning trajectory
-            SystemMessagePromptTemplate(
-                prompt=[
-                    PromptTemplate.from_file(
-                        f"./src/reasoning/reasoning_trajectory.md"
-                    )
-                ]
-            ),
-
-            # Instruction for Few-Shot Learning (Only if examples are included)
-            SystemMessage(
-                content="The following are examples of step-by-step logical reasoning. Learn from these examples and apply a similar approach to future user queries."
-            ) if ADD_FEW_SHOT_EXAMPLES else None,
-            # Few-Shot Examples (Dynamically Added)
-            *few_shot_examples,
-
-            HumanMessagePromptTemplate(
-                prompt=[
-                    PromptTemplate.from_template("[Web Page]\n"),
-                    ImagePromptTemplate(
-                        template={"url": "data:image/png;base64,{img}"},
-                        input_variables=[
-                            "img",
-                        ],
-                    ),
-                    PromptTemplate.from_template("\n\nCurrent URL: {current_url}"),
-                ],
-            ),
-            HumanMessagePromptTemplate(
-                prompt=[
-                    PromptTemplate.from_file(
-                        f"./src/reasoning/reasoning_prompt_human.md"
-                    ),
-                ],
-            ),
-        ],
+        messages=messages,
         input_variables=[
             "request_name",
             "request_category",
