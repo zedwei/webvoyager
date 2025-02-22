@@ -23,7 +23,7 @@ Action to output: Close the pop-up for phone verification and continue with emai
 
 Please generate the outputs for task 1, task 2, and task 3 **step by step**.
 
-# Task 1: Infer which action "I" should take based on the input from "[User's request]", "[Web page before the action]", and "[Web page after the action]".
+# Task 1: Infer which action "I" should take based on the input from "[User's request]", "[Web page before the action]", and "[Web page after the action]". The actions may NOT be included in the "[Top possible actions]".
 
 # Task 2: Generate the thought about the inferred action. It's **important** to explicitly list the actions that "I" should NOT take and the actions that "I" should take.
 
