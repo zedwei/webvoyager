@@ -101,13 +101,22 @@ class Interpreter:
 
     def __init__(self, folder):
         self.folder = folder
+        self.extraction_results = []  # List to store extraction results
+        
+        # Load trajectory data
+        trajectory_path = os.path.join(folder, "trajectory.json")
+        try:
+            with open(trajectory_path, 'r') as f:
+                self.trajectory = json.load(f)
+        except FileNotFoundError:
+            print(f"Trajectory file not found at {trajectory_path}")
+            self.trajectory = []
 
         # Initialize HTML schema with ordered fields
         self.html_schema = {
             "step": {"type": "integer"},
             "user_task": {"type": "string"}            
         }
-        
         
         # Add fields from ExtractionResponse in order of definition
         extraction_schema = ExtractionResponse.model_json_schema()
@@ -182,7 +191,7 @@ class Interpreter:
         return empty_response
     
     def check_structured_response(self, structured_response):
-         for key, details in self.html_schema.items():
+        for key, details in self.html_schema.items():
             property_type = details.get("type")
 
             # Set default values based on property type
@@ -214,6 +223,15 @@ class Interpreter:
                     structured_response[key] = False
             """
 
+    def normalize_string(self, s: str) -> str:
+        if not isinstance(s, str):
+            return s
+        # Remove special characters and extra spaces, convert to lowercase
+        # First get alphanumeric and spaces
+        normalized = ''.join(c.lower() for c in s if c.isalnum() or c.isspace())
+        # Then reduce multiple spaces to single space and strip
+        return ' '.join(normalized.split())
+        
     def retrieve_reasoning_system_prompt(self, page_category: str):
         if page_category and "home".casefold() in page_category.casefold():
             return PromptTemplate.from_file(self.reasoning_prompt_ot_homepage_path)
@@ -238,46 +256,119 @@ class Interpreter:
         else:
             return PromptTemplate.from_file(self.oneshot_prompt_system_path)
     
-    def interpret(self, img_before, img_after, task, url, step):
-        """Interpret the current state and generate next action."""
-        # Step 1: Extraction
-        # extraction_prompt = self.load_prompt()
+    def extract(self):
+        """Extract information from screenshots and user requests for all steps.
+        First checks if extraction results already exist in extraction.json.
+        If they do, loads them instead of running extraction again.
+        Otherwise runs extraction and saves results to extraction.json.
+        """
+        # Check for existing extraction.json
+        extraction_path = os.path.join(self.folder, "extraction.json")
+        if os.path.exists(extraction_path):
+            print(f"{Fore.GREEN}Loading existing extraction results from {extraction_path}")
+            try:
+                with open(extraction_path, 'r') as f:
+                    saved_results = json.load(f)
+                # Convert saved results back to ExtractionResponse objects
+                self.extraction_results = [ExtractionResponse(**result) for result in saved_results]
+                return
+            except Exception as e:
+                print(f"{Fore.RED}Error loading extraction.json: {e}. Will re-run extraction.")
         
-        # Create chat prompt template
-        extraction_template = ChatPromptTemplate(
-            messages=[
-                SystemMessagePromptTemplate(
-                    prompt=[
-                        PromptTemplate.from_file(self.extraction_prompt_path),
-                    ],
-                ),
-                HumanMessagePromptTemplate(
-                    prompt=[
-                        PromptTemplate.from_template("[Web Page]\n"),
-                        ImagePromptTemplate(
-                            template={"url": "data:image/png;base64,{img}"},
-                            input_variables=["img"]
-                        ),
-                        PromptTemplate.from_template("\n\nCurrent URL: {url}\n"),
-                        PromptTemplate.from_template("[User Request]\n{task}")
-                    ]
-                )
-            ]
-        )
+        self.extraction_results = []  # Reset results list
         
-        # Format the messages with our data
-        extraction_messages = extraction_template.format_messages(
-            img=img_before,
-            url=url,
-            task=task
-        )
+        for step, step_data in enumerate(self.trajectory):
+            # Load images
+            img_before_path = step_data["annotated"]
+            try:
+                with open(img_before_path, "rb") as f:
+                    img_before = base64.b64encode(f.read()).decode()
+            except FileNotFoundError:
+                print(f"Image file not found at {img_before_path}")
+                continue
 
-        # Run extraction
-        extraction_response = extraction_llm.invoke(extraction_messages)
+            # Get task and URL
+            task = step_data["task"]
+            url = step_data["url"]
+
+            # Create extraction template
+            extraction_template = ChatPromptTemplate(
+                messages=[
+                    SystemMessagePromptTemplate(
+                        prompt=[
+                            PromptTemplate.from_file(self.extraction_prompt_path),
+                        ],
+                    ),
+                    HumanMessagePromptTemplate(
+                        prompt=[
+                            PromptTemplate.from_template("[Web Page]\n"),
+                            ImagePromptTemplate(
+                                template={"url": "data:image/png;base64,{img}"},
+                                input_variables=["img"]
+                            ),
+                            PromptTemplate.from_template("\n\nCurrent URL: {url}\n"),
+                            PromptTemplate.from_template("[User Request]\n{task}")
+                        ]
+                    )
+                ]
+            )
+            
+            # Format the messages with our data
+            extraction_messages = extraction_template.format_messages(
+                img=img_before,
+                url=url,
+                task=task
+            )
+
+            # Run extraction
+            extraction_response = extraction_llm.invoke(extraction_messages)
+            self.extraction_results.append(extraction_response)
+
+            print(f"{Fore.WHITE}================= Extracted info for step: {step} =================")
+            print(f"{Fore.GREEN}user_task: {Fore.YELLOW}{task}")
+            for key, value in extraction_response.model_dump().items():
+                print(f"{Fore.GREEN}{key}: {Fore.YELLOW}{format_time_value(value)}")
+            print("")
+            
+        # Save results to extraction.json
+        try:
+            results_to_save = [result.model_dump() for result in self.extraction_results]
+            with open(extraction_path, 'w') as f:
+                json.dump(results_to_save, f, cls=DateTimeEncoder, indent=4)
+            print(f"{Fore.GREEN}Saved extraction results to {extraction_path}")
+        except Exception as e:
+            print(f"{Fore.RED}Error saving extraction.json: {e}")
+            
+    def interpret_step(self, img_before, img_after, task, url, step):
+        """Interpret a single step using extraction results and generate next action.
+        Checks for near-duplicates and includes next step's extraction results in one-shot generation.
+        
+        Args:
+            img_before: Base64 encoded image of current state
+            img_after: Base64 encoded image of next state
+            task: User task
+            url: Current URL
+            step: Current step number
+            
+        Returns:
+            dict or None: Interpretation response if successful, None if step should be skipped
+        """
+        # Step 1: Get extraction results
+        if step >= len(self.extraction_results) or step + 1 >= len(self.extraction_results):
+            print(f"{Fore.RED}Error: Step {step} or {step + 1} not found in extraction results")
+            return None
+            
+        current_extraction_response = self.extraction_results[step]
+        next_extraction_response = self.extraction_results[step + 1]
+        
+        # Check if near-duplicate
+        if self.is_neardupe(current_extraction_response, next_extraction_response):
+            print(f"{Fore.YELLOW}Step {step} and {step + 1} are near-duplicates, skipping...")
+            return None
         
         # Step 2: Reasoning about possible actions
-        reasoning_system_prompt = self.retrieve_reasoning_system_prompt(extraction_response.webpage_category)
-        reasoning_human_prompt = generate_extraction_results_human_prompt(self.reasoning_prompt_human_path, extraction_response)
+        reasoning_system_prompt = self.retrieve_reasoning_system_prompt(current_extraction_response.webpage_category)
+        reasoning_human_prompt = generate_extraction_results_human_prompt(self.reasoning_prompt_human_path, current_extraction_response)
         
         reasoning_template = ChatPromptTemplate(
             messages=[
@@ -312,8 +403,11 @@ class Interpreter:
         reasoning_response = reasoning_llm.invoke(reasoning_messages)
 
         # Step 3: Generate the one-shot example of the current step
-        oneshot_system_prompt = self.retrieve_oneshot_system_prompt(extraction_response.webpage_category)
-        oneshot_human_prompt = generate_extraction_results_human_prompt(self.oneshot_prompt_human_path, extraction_response)
+        oneshot_system_prompt = self.retrieve_oneshot_system_prompt(current_extraction_response.webpage_category)
+        
+        # Generate prompts for both current and next states
+        oneshot_human_prompt_current = generate_extraction_results_human_prompt(self.oneshot_prompt_human_path, current_extraction_response)
+        oneshot_human_prompt_next = generate_extraction_results_human_prompt(self.oneshot_prompt_human_path, next_extraction_response)
         
         oneshot_template = ChatPromptTemplate(
             messages=[
@@ -328,21 +422,16 @@ class Interpreter:
                             input_variables=["img_before"]
                         ),
                         PromptTemplate.from_template("\n\nURL of the web page before the action: {url}\n"),
-                        PromptTemplate.from_template("[Web Page after the action]\n"),
+                        PromptTemplate.from_template("\n[Description of the user request and web page before the action]\n"),
+                        PromptTemplate.from_template(oneshot_human_prompt_current),
+                        PromptTemplate.from_template("\n[Web Page after the action]\n"),
                         ImagePromptTemplate(
                             template={"url": "data:image/png;base64,{img_after}"},
                             input_variables=["img_after"]
                         ),
-                    ]
-                ),
-                HumanMessagePromptTemplate(
-                    prompt=[
-                        PromptTemplate.from_template(oneshot_human_prompt)
-                    ]
-                ),
-                HumanMessagePromptTemplate(
-                    prompt=[    
-                        PromptTemplate.from_template("[Top possible actions]: {top_actions}\n")
+                        PromptTemplate.from_template("\n[Description of the user request and web page after the action]\n"),
+                        PromptTemplate.from_template(oneshot_human_prompt_next),
+                        PromptTemplate.from_template("\n[Top possible actions]: {top_actions}\n")
                     ]
                 )
             ]
@@ -361,7 +450,7 @@ class Interpreter:
         
         # Generate the interpretor's response
         interpretation_response = {}
-        for key, value in extraction_response.model_dump().items():
+        for key, value in current_extraction_response.model_dump().items():
             interpretation_response[key] = format_time_value(value)
         for key, value in reasoning_response.model_dump().items():
             interpretation_response[key] = format_time_value(value)
@@ -375,7 +464,7 @@ class Interpreter:
         print("")
 
         return interpretation_response
-    
+
     def generate_html(self, steps):
         html_content = """
         <!DOCTYPE html>
@@ -441,22 +530,19 @@ class Interpreter:
         return html_content
 
     def run(self):
-        trajectory_file = os.path.join(self.folder, "trajectory.json")
-
+        self.extract()
+        
         trajectory_txt_path = os.path.join(self.folder, "trajectory.txt")
         if os.path.exists(trajectory_txt_path):
             os.remove(trajectory_txt_path)
-
-        with open(trajectory_file, "r") as file:
-            trajectory_data = json.load(file)
 
         steps = []
         step = 0
         few_shots = []
 
-        for i in range(len(trajectory_data) - 1):
-            current = trajectory_data[i]
-            next_step = trajectory_data[i + 1]
+        for i in range(len(self.trajectory) - 1):
+            current = self.trajectory[i]
+            next_step = self.trajectory[i + 1]
 
             current_img_path = current["annotated"]
             next_img_path = next_step["annotated"]
@@ -470,32 +556,35 @@ class Interpreter:
             task = current["task"]
             url = current["url"]
             
-            response = self.interpret(img_current, img_next, task, url, step)
+            response = self.interpret_step(img_current, img_next, task, url, step)
             
-            # Write to text file
-            html_response = {}
-            html_response["step"] = step
-            one_shot = {}
-            with open(trajectory_txt_path, "a") as output_file:
-                output_file.write(f"================= Interpreted LLM response for step: {step} =================\n")
-                output_file.write(f"User task: {task}\n")
-                html_response["user_task"] = task
-                one_shot["user_task"] = task
-                for key, value in response.items():
-                    if key == "webpage_category":
-                        output_file.write(f"Webpage URL: {url}\n")
-                        html_response["webpage_url"] = url
-                        one_shot["webpage_url"] = url
-                    value = format_time_value(value)
-                    output_file.write(f"{key.replace('_', ' ').capitalize()}: {value}\n")
-                    html_response[key] = value
-                    one_shot[key] = value
-                output_file.write("\n")
-                html_response["img_before"] = f"data:image/png;base64,{img_current}"
-                html_response["img_after"] = f"data:image/png;base64,{img_next}"
+            if response is not None:
+                # Write to text file
+                html_response = {}
+                html_response["step"] = step
+                one_shot = {}
+                with open(trajectory_txt_path, "a") as output_file:
+                    output_file.write(f"================= Interpreted LLM response for step: {step} =================\n")
+                    output_file.write(f"User task: {task}\n")
+                    html_response["user_task"] = task
+                    one_shot["user_task"] = task
+                    for key, value in response.items():
+                        if key == "webpage_category":
+                            output_file.write(f"Webpage URL: {url}\n")
+                            html_response["webpage_url"] = url
+                            one_shot["webpage_url"] = url
+                        value = format_time_value(value)
+                        output_file.write(f"{key.replace('_', ' ').capitalize()}: {value}\n")
+                        html_response[key] = value
+                        one_shot[key] = value
+                    output_file.write("\n")
+                    html_response["img_before"] = f"data:image/png;base64,{img_current}"
+                    html_response["img_after"] = f"data:image/png;base64,{img_next}"
+                    step += 1
+                    steps.append(html_response)
+                    few_shots.append(one_shot)
+            else:
                 step += 1
-                steps.append(html_response)
-                few_shots.append(one_shot)
 
         # Generate and write HTML file
         html_content = self.generate_html(steps)
@@ -504,6 +593,92 @@ class Interpreter:
 
         with open(os.path.join(self.folder, "few_shots.json"), "w", encoding='utf-8') as json_file:
             json.dump(few_shots, json_file, ensure_ascii=False, indent=4, cls=DateTimeEncoder)
+
+    def is_neardupe(self, response1: ExtractionResponse, response2: ExtractionResponse) -> bool:
+        """Check if two ExtractionResponse objects are near-duplicates.
+        Focuses on request_*, status_*, and webpage_category fields.
+        
+        Args:
+            response1: First ExtractionResponse object
+            response2: Second ExtractionResponse object
+            
+        Returns:
+            bool: True if the responses are near-duplicates
+        """
+        # Check webpage_category first - if different, they're not duplicates
+        if response1.webpage_category != response2.webpage_category:
+            return False
+            
+        # Check request fields
+        request_fields = [
+            ('request_name', response1.request_name, response2.request_name),
+            ('request_category', response1.request_category, response2.request_category),
+            ('request_date', response1.request_date, response2.request_date),
+            ('request_time', response1.request_time, response2.request_time),
+            ('request_count', response1.request_count, response2.request_count)
+        ]
+        
+        # Check status fields
+        status_fields = [
+            ('status_name', response1.status_name, response2.status_name),
+            ('status_date', response1.status_date, response2.status_date),
+            ('status_time', response1.status_time, response2.status_time),
+            ('status_count', response1.status_count, response2.status_count)
+        ]
+        
+        # Count how many fields match
+        request_matches = 0
+        for field, val1, val2 in request_fields:
+            if val1 is None and val2 is None:
+                request_matches += 1
+            elif val1 is not None and val2 is not None:
+                val1_norm = self.normalize_string(val1)
+                val2_norm = self.normalize_string(val2)
+                if val1_norm == val2_norm:
+                    request_matches += 1
+                    
+        status_matches = 0
+        for field, val1, val2 in status_fields:
+            if val1 is None and val2 is None:
+                status_matches += 1
+            elif val1 is not None and val2 is not None:
+                val1_norm = self.normalize_string(val1)
+                val2_norm = self.normalize_string(val2)
+                if val1_norm == val2_norm:
+                    status_matches += 1
+        
+        # Count how many fields have values in both responses
+        request_comparisons = sum(1 for field, val1, val2 in request_fields 
+                                if val1 is not None and val2 is not None)
+        status_comparisons = sum(1 for field, val1, val2 in status_fields 
+                               if val1 is not None and val2 is not None)
+        
+        # If we can't compare any fields, they're not duplicates
+        if request_comparisons == 0 and status_comparisons == 0:
+            return False
+            
+        # Calculate match ratio for each category
+        request_ratio = request_matches / request_comparisons if request_comparisons > 0 else 0
+        status_ratio = status_matches / status_comparisons if status_comparisons > 0 else 0
+        
+        # Consider them near-duplicates if:
+        # 1. At least one category has fields to compare
+        # 2. For categories with fields to compare, at least 80% match
+        threshold = 1.0
+        has_request_fields = request_comparisons > 0
+        has_status_fields = status_comparisons > 0
+        
+        if has_request_fields and has_status_fields:
+            # If both have fields, both should meet threshold
+            return request_ratio >= threshold and status_ratio >= threshold
+        elif has_request_fields:
+            # If only request fields exist, check those
+            return request_ratio >= threshold
+        elif has_status_fields:
+            # If only status fields exist, check those
+            return status_ratio >= threshold
+        
+        return False
 
 def select_data_folder():
     """
@@ -555,6 +730,7 @@ def main():
     if folder:
         interpreter = Interpreter(folder)
         interpreter.run()
+        # interpreter.extract()
 
 if __name__ == "__main__":
     main()

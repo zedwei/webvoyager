@@ -8,7 +8,7 @@ class ReasoningFewShots:
 
     def __init__(self, data_folder_path = "./data"):
         self.data_folder_path = data_folder_path
-        config_path = os.path.join(data_folder_path, "config.txt")
+        config_path = os.path.join(data_folder_path, "few-shots.txt")
 
         self.few_shot_file_paths = []
         try:

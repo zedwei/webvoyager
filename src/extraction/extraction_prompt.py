@@ -65,7 +65,7 @@ class ExtractionResponse(BaseModel):
         description="List of restaurant names displayed on the search result page"
     )
     list_time: Optional[List[time]] = Field(
-        description="List of availabile time slot on the detailed page"
+        description="List of time slots on the detailed page"
     )
 
     webpage_category: Optional[str] = Field(
@@ -79,6 +79,6 @@ class ExtractionResponse(BaseModel):
     webpage_state: Optional[str] = Field(
         description="""A summary of the key information on the current webpage, 
                     including web page category, restaurant name, booking date, booking time, party size, 
-                    list of restaurants (if applicable), list of available time slots (if applicable).
+                    list of restaurants (if applicable), list of time slots (if applicable).
                     Include the main components on the current webpage as well."""
     )

@@ -18,8 +18,8 @@ You are tasked with extracting restaurant booking parameters from three sources:
     - Values: Homepage, Search result page, Detailed page, Booking page
 13. **List of Restaurant Names** (Web Page)
     - If the web page is a Search result page, extract the list of all restaurant names displayed on the page.
-14. **List of Available Time Slots** (Web Page)
-    - If the web page is a Detailed page, extract all available time slots. On an OpenTable.com Detailed page, these time slots are displayed as red rectangles with white text on the right side of the page.
+14. **List of Time Slots** (Web Page)
+    - If the web page is a Detailed page, extract a list of time slots. On an OpenTable.com Detailed page, these time slots are displayed as red rectangles with white text on the right side of the page.
 
 ### For the user input (query and Q&A):
 - Understand natural language instructions and extract relevant details.

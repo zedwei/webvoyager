@@ -11,4 +11,4 @@
 - **Web Page Category**: {webpage_category}
 - **Web Page State**: {webpage_state}
 - **List of Restaurant Names if on search result page**: {list_name}
-- **List of Available Time Slots if on detailed page**: {list_time}
+- **List of Time Slots if on detailed page**: {list_time}
